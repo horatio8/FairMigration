@@ -54,11 +54,17 @@
   .util-count b { color: #fff; font-weight: 900; }
   .util-dim { color: rgba(255,255,255,.55); }
 
-  /* ---------- hero (split editorial) ---------- */
-  .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; min-height: min(90vh, 840px); background: var(--navy-900); }
+  /* ---------- hero (full-bleed crowd) ---------- */
+  .hero { position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+    min-height: min(90vh, 840px); background-color: var(--navy-900);
+    background-image:
+      linear-gradient(90deg, rgba(6,34,61,.94) 0%, rgba(6,34,61,.82) 34%, rgba(6,34,61,.55) 66%, rgba(6,34,61,.34) 100%),
+      linear-gradient(0deg, rgba(6,34,61,.55) 0%, rgba(6,34,61,0) 40%),
+      url('assets/hero-bg.jpg');
+    background-size: cover; background-position: center; background-repeat: no-repeat; }
   .hero-left { display: flex; flex-direction: column; justify-content: flex-end;
     padding: clamp(40px, 5vw, 80px) clamp(28px, 4.5vw, 72px); color: #fff; }
-  .hero-inner { max-width: 600px; }
+  .hero-inner { max-width: 600px; position: relative; z-index: 1; }
   .hero .display { font-size: clamp(44px, 5.8vw, 80px); color: #fff; margin: 20px 0 24px; }
   .hero-lead { font-size: clamp(17px, 1.5vw, 20px); line-height: 1.5; color: rgba(255,255,255,.82);
     font-weight: 500; max-width: 44ch; margin: 0 0 32px; }
@@ -73,10 +79,6 @@
     border-radius: 999px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--coral-400); border-radius: 999px; transition: width .6s ease; }
   .goal-label { font-size: 12.5px; color: rgba(255,255,255,.6); font-weight: 700; white-space: nowrap; }
-  .hero-photo { position: relative; min-height: 300px; overflow: hidden; background-color: var(--navy-800);
-    background-size: cover; background-position: left center; background-repeat: no-repeat; }
-  .photo-chip { position: absolute; left: 0; bottom: 30px; background: rgba(6,34,61,.85); color: #fff;
-    font-size: 13px; font-weight: 600; line-height: 1.45; padding: 12px 18px; max-width: 260px; }
 
   /* ---------- generic section ---------- */
   .section { padding: clamp(64px, 8vw, 104px) 0; }
@@ -152,9 +154,8 @@
 
   /* ---------- responsive ---------- */
   @media (max-width: 880px) {
-    .hero { grid-template-columns: 1fr; min-height: 0; }
-    .hero-photo { order: -1; min-height: 240px; height: 38vh; background-position: center; }
-    .hero-left { padding: 40px 24px 48px; }
+    .hero { min-height: 72vh; }
+    .hero-left { padding: 80px 24px 44px; }
     .petition-grid { grid-template-columns: 1fr; }
     .pressures { grid-template-columns: 1fr; border-top: none; }
     .pressure { border-right: none !important; border-top: 2px solid var(--ink-900); padding: 24px 0 !important; }

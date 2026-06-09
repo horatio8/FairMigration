@@ -68,9 +68,6 @@
             </div>
           </div>
         </div>
-        <div className="hero-photo" style={{ backgroundImage: "url('" + A + "hero-crowd.png')" }}>
-          <div className="photo-chip">Everyday Australians — and they're carrying the cost of a broken system.</div>
-        </div>
       </section>
     );
   }
