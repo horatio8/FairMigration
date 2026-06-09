@@ -1,0 +1,8 @@
+/* Fair Migration webfonts
+   Roboto = primary (headings + body, all display weights)
+   Open Sans = secondary (supporting / long-form body)
+   Loaded from the Google Fonts CDN. If you need self-hosted binaries,
+   drop the .woff2 files into assets/fonts/ and replace these @font-face
+   rules with local src: url(...) declarations. */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');

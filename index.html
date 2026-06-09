@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fair Migration — Put Australians First</title>
+<link rel="icon" href="assets/favicon-navy.png" />
+
+<!-- Design system tokens + styles -->
+<link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/tokens/fonts.css" />
+<link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/tokens/colors.css" />
+<link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/tokens/typography.css" />
+<link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/tokens/spacing.css" />
+<link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/styles.css" />
+
+<!-- React + Babel (pinned) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Design system component bundle (plain JS) -->
+<script src="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/_ds_bundle.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: var(--font-sans); color: var(--ink-900); background: var(--white); }
+  a { color: inherit; }
+  .container { max-width: var(--container-max); margin: 0 auto; padding: 0 24px; }
+  .container--wide { max-width: 1240px; }
+  .caps { font-weight: 900; }
+
+  /* ---------- eyebrow ---------- */
+  .eyebrow { display: inline-flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 800;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--red-500); white-space: nowrap; }
+  .eyebrow::before { content: ''; width: 30px; height: 3px; background: var(--red-500); display: block; }
+  .eyebrow--light { color: var(--coral-400); }
+  .eyebrow--light::before { background: var(--coral-400); }
+  .eyebrow--navy { color: var(--navy-700); }
+  .eyebrow--navy::before { background: var(--navy-700); }
+
+  /* ---------- display type ---------- */
+  .display { font-weight: 900; letter-spacing: -0.035em; line-height: 0.96; text-wrap: balance; margin: 0; }
+  .h2-display { font-size: clamp(32px, 4.2vw, 52px); font-weight: 900; letter-spacing: -0.03em;
+    line-height: 1.02; margin: 18px 0 0; text-wrap: balance; }
+
+  /* ---------- sticky top ---------- */
+  .site-top { position: sticky; top: 0; z-index: 60; box-shadow: 0 1px 0 var(--line-200); }
+  .util-bar { background: var(--navy-900); color: rgba(255,255,255,.82); }
+  .util-inner { max-width: var(--container-max); margin: 0 auto; padding: 8px 24px; display: flex;
+    align-items: center; justify-content: space-between; gap: 16px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .util-inner a { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.4); }
+  .util-count { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .util-count b { color: #fff; font-weight: 900; }
+  .util-dim { color: rgba(255,255,255,.55); }
+
+  /* ---------- hero (split editorial) ---------- */
+  .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; min-height: min(90vh, 840px); background: var(--navy-900); }
+  .hero-left { display: flex; flex-direction: column; justify-content: flex-end;
+    padding: clamp(40px, 5vw, 80px) clamp(28px, 4.5vw, 72px); color: #fff; }
+  .hero-inner { max-width: 600px; }
+  .hero .display { font-size: clamp(44px, 5.8vw, 80px); color: #fff; margin: 20px 0 24px; }
+  .hero-lead { font-size: clamp(17px, 1.5vw, 20px); line-height: 1.5; color: rgba(255,255,255,.82);
+    font-weight: 500; max-width: 44ch; margin: 0 0 32px; }
+  .hero-lead .caps { color: var(--coral-400); }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .hero-ticker { display: flex; align-items: center; gap: 18px; margin-top: clamp(34px, 5vw, 60px);
+    padding-top: 22px; border-top: 1px solid rgba(255,255,255,.16); flex-wrap: wrap; }
+  .tick-star { width: 22px; height: 22px; flex-shrink: 0; }
+  .tick-count { font-size: 22px; font-weight: 900; letter-spacing: -0.01em; color: #fff; line-height: 1; }
+  .tick-label { font-size: 12.5px; color: rgba(255,255,255,.6); font-weight: 600; margin-top: 3px; }
+  .progress { flex: 1; min-width: 130px; height: 7px; background: rgba(255,255,255,.16);
+    border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--coral-400); border-radius: 999px; transition: width .6s ease; }
+  .goal-label { font-size: 12.5px; color: rgba(255,255,255,.6); font-weight: 700; white-space: nowrap; }
+  .hero-photo { position: relative; min-height: 300px; overflow: hidden; background-color: var(--navy-800);
+    background-size: cover; background-position: left center; background-repeat: no-repeat; }
+  .photo-chip { position: absolute; left: 0; bottom: 30px; background: rgba(6,34,61,.85); color: #fff;
+    font-size: 13px; font-weight: 600; line-height: 1.45; padding: 12px 18px; max-width: 260px; }
+
+  /* ---------- generic section ---------- */
+  .section { padding: clamp(64px, 8vw, 104px) 0; }
+  section[id] { scroll-margin-top: 116px; }
+  .section--tint { background: var(--mist-50); border-top: 1px solid var(--line-200); border-bottom: 1px solid var(--line-200); }
+  .section--dark { background: var(--navy-900); color: #fff; }
+  .section-head { max-width: 760px; }
+  .lead-p { font-size: 20px; line-height: 1.55; font-weight: 600; color: var(--ink-700); margin: 22px 0 0; }
+  .body-p { font-size: 16px; line-height: 1.7; color: var(--ink-700); margin: 0 0 16px; }
+
+  /* ---------- problem: indexed pressure blocks ---------- */
+  .pressures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 56px;
+    border-top: 2px solid var(--ink-900); }
+  .pressure { padding: 30px 32px 30px 0; border-right: 1px solid var(--line-200); }
+  .pressure:nth-child(3n) { border-right: none; padding-right: 0; }
+  .pressure:not(:nth-child(3n)) { padding-right: 32px; }
+  .pressure-idx { font-size: 15px; font-weight: 900; color: var(--red-500); letter-spacing: 0.05em; }
+  .pressure-stat { font-size: clamp(40px, 4.5vw, 58px); font-weight: 900; letter-spacing: -0.03em;
+    color: var(--ink-900); line-height: 1; margin: 14px 0 12px; }
+  .pressure-h { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--navy-700); margin: 0 0 10px; }
+  .pressure-p { font-size: 15px; line-height: 1.6; color: var(--ink-700); margin: 0; }
+
+  /* ---------- petition section ---------- */
+  .petition-grid { display: grid; grid-template-columns: 1fr 460px; gap: clamp(40px, 5vw, 72px); align-items: start; margin-top: 44px; }
+  .demand-list { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+  .demand-list li { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start;
+    font-size: 17px; line-height: 1.5; color: var(--ink-900); font-weight: 600; }
+  .demand-list .star { width: 18px; height: 18px; margin-top: 4px; }
+  .goal-block { margin-bottom: 22px; }
+  .goal-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .goal-now { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; color: var(--navy-700); line-height: 1; }
+  .goal-now span { font-size: 14px; font-weight: 700; color: var(--ink-500); }
+  .goal-target { font-size: 13px; font-weight: 800; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.06em; }
+  .goal-bar { height: 9px; background: var(--mist-100); border: 1px solid var(--line-200); border-radius: 999px; overflow: hidden; }
+  .goal-fill { height: 100%; background: var(--red-500); border-radius: 999px; transition: width .6s ease; }
+
+  /* ---------- map stage (dark) ---------- */
+  .map-head h2 { color: #fff; }
+  .map-lead { color: rgba(255,255,255,.78); font-size: 18px; line-height: 1.6; font-weight: 500; margin: 18px 0 0; max-width: 60ch; }
+  .map-stage { margin-top: 44px; }
+
+  /* ---------- demand manifesto ---------- */
+  .manifesto { max-width: 920px; }
+  .manifesto .star { width: 40px; height: 40px; margin-bottom: 26px; }
+  .demand-quote { font-size: clamp(28px, 3.8vw, 46px); font-weight: 800; line-height: 1.18;
+    letter-spacing: -0.02em; color: var(--ink-900); margin: 0 0 36px; text-wrap: balance; }
+  .demand-quote .r { color: var(--red-500); }
+  .demand-quote .n { color: var(--navy-700); }
+
+  /* ---------- donate ---------- */
+  .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 40px; }
+  .tier { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 30px 18px; background: var(--white); border: 2px solid var(--line-200); border-radius: 12px;
+    cursor: pointer; font-family: var(--font-sans); transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease; }
+  .tier:hover { border-color: var(--navy-600); transform: translateY(-2px); }
+  .tier-on { border-color: var(--red-500); box-shadow: 0 0 0 3px rgba(162,1,0,.12); }
+  .tier-amt { font-size: 38px; font-weight: 900; letter-spacing: -0.03em; color: var(--ink-900); line-height: 1; }
+  .tier-note { font-size: 13px; font-weight: 600; color: var(--ink-500); text-align: center; }
+  .tier-tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+    background: var(--red-500); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
+
+  /* ---------- footer ---------- */
+  .footer { border-top: 1px solid var(--line-200); padding: 48px 0 56px; background: var(--mist-50); }
+  .footer a { text-decoration: none; }
+  .footer a:hover { color: var(--navy-700); }
+  .social { display: flex; gap: 18px; }
+  .foot-cta { background: var(--navy-900); color: #fff; }
+  .foot-cta-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px;
+    padding: clamp(40px, 5vw, 64px) 24px; }
+  .foot-cta h2 { font-size: clamp(28px, 3.4vw, 40px); font-weight: 900; letter-spacing: -0.02em; color: #fff; margin: 0; line-height: 1.05; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; min-height: 0; }
+    .hero-photo { order: -1; min-height: 240px; height: 38vh; background-position: center; }
+    .hero-left { padding: 40px 24px 48px; }
+    .petition-grid { grid-template-columns: 1fr; }
+    .pressures { grid-template-columns: 1fr; border-top: none; }
+    .pressure { border-right: none !important; border-top: 2px solid var(--ink-900); padding: 24px 0 !important; }
+  }
+  @media (max-width: 560px) {
+    .tier-grid { grid-template-columns: 1fr; }
+    .util-hide { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="gistool.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

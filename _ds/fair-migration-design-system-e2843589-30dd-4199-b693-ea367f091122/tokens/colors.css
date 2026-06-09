@@ -1,0 +1,70 @@
+/* ============================================================
+   FAIR MIGRATION — COLOR TOKENS
+   Restrained navy / slate / white UI palette, plus the
+   colourful wordmark accents (red + Commonwealth-star coral)
+   used sparingly for brand moments only.
+   ============================================================ */
+
+:root {
+  /* --- Brand primitives --- */
+  --navy-900: #06223d;   /* deepest pressed navy            */
+  --navy-800: #0a2f52;   /* navy hover / dark surface       */
+  --navy-700: #0d3b66;   /* PRIMARY brand navy              */
+  --navy-600: #134a7d;   /* lighter navy                    */
+  --navy-100: #e7eef5;   /* navy tint surface               */
+  --navy-50:  #f3f7fb;   /* faintest navy wash              */
+
+  --red-700:  #6e0100;   /* deepest pressed red             */
+  --red-600:  #800100;   /* red hover                       */
+  --red-500:  #a20100;   /* brand RED ("FAIR" wordmark / CTA)*/
+  --red-100:  #f6e3e2;   /* faint red tint surface          */
+  --coral-400:#ecbfaa;   /* Commonwealth-star coral accent  */
+  --coral-200:#f6e0d5;   /* soft coral tint                 */
+  --cream-100:#f1efe7;   /* brand cream (logo lockup field) */
+
+  /* --- Neutral ramp --- */
+  --ink-900:  #111827;   /* primary text / near-black       */
+  --ink-700:  #374151;   /* SECONDARY slate                 */
+  --ink-500:  #6b7280;   /* muted text                      */
+  --ink-400:  #9ca3af;   /* disabled / placeholder          */
+  --line-300: #d1d5db;   /* strong border                   */
+  --line-200: #e5e7eb;   /* default border / divider        */
+  --mist-100: #f3f4f6;   /* subtle fill                     */
+  --mist-50:  #f9fafb;   /* page-section wash               */
+  --white:    #ffffff;
+
+  /* --- Semantic aliases --- */
+  --color-primary:        var(--navy-700);
+  --color-primary-hover:  var(--navy-800);
+  --color-primary-press:  var(--navy-900);
+  /* Action / CTA = brand red */
+  --color-action:         var(--red-500);
+  --color-action-hover:   var(--red-600);
+  --color-action-press:   var(--red-700);
+  --color-accent-red:      var(--red-500);
+  --color-accent-coral:   var(--coral-400);
+
+  --text-primary:    var(--ink-900);
+  --text-secondary:  var(--ink-700);
+  --text-muted:      var(--ink-500);
+  --text-on-dark:    var(--white);
+  --text-link:       var(--ink-900);
+  --text-link-hover: var(--navy-700);
+
+  --surface-page:    var(--white);
+  --surface-wash:    var(--mist-50);
+  --surface-card:    var(--white);
+  --surface-fill:    var(--mist-100);
+  --surface-dark:    var(--navy-700);
+  --surface-navy-tint: var(--navy-50);
+  --surface-cream:   var(--cream-100);
+
+  --border-default:  var(--line-200);
+  --border-strong:   var(--line-300);
+  --border-focus:    var(--navy-700);
+
+  /* Status (civic-restrained) */
+  --color-success:   #1f7a4d;
+  --color-warning:   #b45309;
+  --color-danger:    var(--red-500);
+}

@@ -1,0 +1,41 @@
+/* ============================================================
+   FAIR MIGRATION — TYPOGRAPHY TOKENS
+   Roboto everywhere; Open Sans for supporting long-form text.
+   Headlines are heavy (700/900) and near-black; civic, urgent.
+   ============================================================ */
+
+:root {
+  /* Families */
+  --font-sans:    'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-support: 'Open Sans', system-ui, sans-serif;
+  --font-display: 'Roboto', system-ui, sans-serif;
+
+  /* Weights */
+  --fw-regular:  400; /* @kind font */
+  --fw-medium:   500; /* @kind font */
+  --fw-bold:     700; /* @kind font */
+  --fw-black:    900; /* @kind font */
+
+  /* Type scale (display-led, ~58px H1) */
+  --fs-display:  64px;   /* hero display          */
+  --fs-h1:       58px;   /* page H1               */
+  --fs-h2:       42px;   /* section headline      */
+  --fs-h3:       30px;   /* sub-headline          */
+  --fs-h4:       22px;   /* card title            */
+  --fs-lead:     20px;   /* lead / intro body     */
+  --fs-body:     16px;   /* base body             */
+  --fs-sm:       14px;   /* small / meta          */
+  --fs-xs:       12px;   /* labels / legal        */
+
+  /* Line heights */
+  --lh-tight:   1.05; /* @kind other */
+  --lh-snug:    1.2; /* @kind other */
+  --lh-normal:  1.45; /* @kind other */
+  --lh-relaxed: 1.65; /* @kind other */
+
+  /* Letter spacing */
+  --ls-tight:   -0.02em;
+  --ls-normal:  0; /* @kind other */
+  --ls-wide:    0.04em;
+  --ls-caps:    0.08em;   /* all-caps emphasis / eyebrows */
+}
