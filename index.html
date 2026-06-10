@@ -13,10 +13,9 @@
 <link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/tokens/spacing.css" />
 <link rel="stylesheet" href="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/styles.css" />
 
-<!-- React + Babel (pinned) -->
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<!-- React (vendored locally — no CDN dependency) -->
+<script src="assets/vendor/react.production.min.js"></script>
+<script src="assets/vendor/react-dom.production.min.js"></script>
 
 <!-- Design system component bundle (plain JS) -->
 <script src="_ds/fair-migration-design-system-e2843589-30dd-4199-b693-ea367f091122/_ds_bundle.js"></script>
@@ -172,7 +171,7 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" src="gistool.jsx"></script>
-  <script type="text/babel" src="app.jsx"></script>
+  <script src="gistool.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
