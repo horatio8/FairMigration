@@ -3,37 +3,58 @@
 (function () {
   const {
     useState,
-    useRef,
-    useEffect
+    useEffect,
+    useRef
   } = React;
   const DS = window.FairMigrationDesignSystem_e28435;
   const {
-    SiteHeader,
-    PetitionForm,
+    Button,
     Card,
     Badge,
-    Button
+    Input
   } = DS;
-  const {
-    PostcodeTool
-  } = window;
   const A = 'assets/';
   const GOAL = 75000;
   const fmt = n => n.toLocaleString();
   const pct = n => Math.min(100, n / GOAL * 100);
+  const clean4 = s => String(s || '').replace(/\D/g, '').slice(0, 4);
+  function safeGet(k) {
+    try {
+      return localStorage.getItem(k);
+    } catch (e) {
+      return null;
+    }
+  }
+  function safeSet(k, v) {
+    try {
+      localStorage.setItem(k, v);
+    } catch (e) {}
+  }
+  function markSigned(data) {
+    safeSet('fm_signed', '1');
+    if (data && data.postcode) safeSet('fm_pc', clean4(data.postcode));
+  }
+  function useLiveCount() {
+    const [count, setCount] = useState(48217 + (safeGet('fm_signed') === '1' ? 1 : 0));
+    useEffect(() => {
+      const id = setInterval(() => setCount(c => c + (Math.random() < 0.6 ? 1 : 0)), 4200);
+      return () => clearInterval(id);
+    }, []);
+    return [count, setCount];
+  }
   function Eyebrow({
     children,
     variant
   }) {
-    const cls = 'eyebrow' + (variant ? ' eyebrow--' + variant : '');
     return React.createElement("div", {
-      className: cls
+      className: 'eyebrow' + (variant ? ' eyebrow--' + variant : '')
     }, children);
   }
   function Star({
     size = 42,
     color = 'var(--navy-700)',
-    className
+    className,
+    style
   }) {
     const cx = 50,
       cy = 50,
@@ -48,6 +69,7 @@
     }
     return React.createElement("svg", {
       className: className,
+      style: style,
       width: size,
       height: size,
       viewBox: "0 0 100 100",
@@ -57,10 +79,16 @@
       fill: color
     }));
   }
-  function TopBar({
-    count,
-    onSign
+  function SiteNav({
+    active,
+    count
   }) {
+    const [open, setOpen] = useState(false);
+    const link = (key, href, label) => React.createElement("a", {
+      className: 'navlink' + (active === key ? ' is-active' : ''),
+      href: href,
+      onClick: () => setOpen(false)
+    }, label);
     return React.createElement("div", {
       className: "site-top"
     }, React.createElement("div", {
@@ -79,31 +107,67 @@
         width: 14,
         height: 14
       }
-    }), React.createElement("b", null, fmt(count)), "\xA0Australians have signed \xB7", ' ', React.createElement("a", {
-      href: "#petition",
-      onClick: e => {
-        e.preventDefault();
-        onSign();
-      }
-    }, "Add your name")))), React.createElement(SiteHeader, {
-      logoSrc: A + 'logo-full.png',
-      links: [{
-        label: 'The problem',
-        href: '#problem'
-      }, {
-        label: 'Impact map',
-        href: '#map'
-      }, {
-        label: 'Sign',
-        href: '#petition'
-      }],
-      donateHref: "#donate"
-    }));
+    }), React.createElement("b", null, fmt(count != null ? count : 48217)), "\xA0Australians have signed \xB7", ' ', React.createElement("a", {
+      href: "petition.html"
+    }, "Add your name")))), React.createElement("header", {
+      className: "site-nav"
+    }, React.createElement("a", {
+      className: "site-nav-brand",
+      href: "index.html"
+    }, React.createElement("img", {
+      src: A + 'logo-full.png',
+      alt: "Fair Migration"
+    })), React.createElement("button", {
+      className: "site-nav-burger",
+      "aria-label": "Toggle menu",
+      "aria-expanded": open,
+      onClick: () => setOpen(o => !o)
+    }, React.createElement("svg", {
+      width: "22",
+      height: "22",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }, open ? React.createElement("g", null, React.createElement("line", {
+      x1: "5",
+      y1: "5",
+      x2: "19",
+      y2: "19"
+    }), React.createElement("line", {
+      x1: "19",
+      y1: "5",
+      x2: "5",
+      y2: "19"
+    })) : React.createElement("g", null, React.createElement("line", {
+      x1: "3",
+      y1: "7",
+      x2: "21",
+      y2: "7"
+    }), React.createElement("line", {
+      x1: "3",
+      y1: "12",
+      x2: "21",
+      y2: "12"
+    }), React.createElement("line", {
+      x1: "3",
+      y1: "17",
+      x2: "21",
+      y2: "17"
+    })))), React.createElement("nav", {
+      className: 'site-nav-links' + (open ? ' is-open' : '')
+    }, link('problem', 'problem.html', 'The problem'), link('map', 'map.html', 'Impact map'), React.createElement("a", {
+      className: "btn-sign",
+      href: "petition.html"
+    }, "Sign"), React.createElement(Button, {
+      variant: "donate",
+      size: "sm",
+      href: "donate.html"
+    }, "Donate"))));
   }
   function Hero({
-    count,
-    onSign,
-    onMap
+    count
   }) {
     return React.createElement("section", {
       className: "hero"
@@ -128,16 +192,15 @@
     }, React.createElement(Button, {
       variant: "primary",
       size: "lg",
-      onClick: onSign
+      href: "petition.html"
     }, "Sign the petition"), React.createElement(Button, {
       variant: "solid",
       size: "lg",
-      onClick: onMap
+      href: "map.html"
     }, "See your suburb \u2192")))));
   }
   function SignatureBar({
-    count,
-    onSign
+    count
   }) {
     const p = pct(count);
     const remaining = Math.max(0, GOAL - count);
@@ -185,10 +248,12 @@
     }), " Updating live"))), React.createElement(Button, {
       variant: "primary",
       size: "lg",
-      onClick: onSign
+      href: "petition.html"
     }, "Add your name")));
   }
-  function Problem() {
+  function Problem({
+    bare
+  }) {
     const items = [{
       idx: '01',
       stat: '+39%',
@@ -210,7 +275,7 @@
       className: "section"
     }, React.createElement("div", {
       className: "container container--wide"
-    }, React.createElement("div", {
+    }, !bare && React.createElement("div", {
       className: "section-head"
     }, React.createElement(Eyebrow, null, "The problem"), React.createElement("h2", {
       className: "h2-display"
@@ -237,10 +302,147 @@
       className: "pressure-p"
     }, it.p))))));
   }
-  function PetitionBlock({
-    petitionRef,
+  function PetitionForm({
+    onSign,
+    cta = 'Sign the petition'
+  }) {
+    const [d, setD] = useState({
+      firstName: '',
+      lastName: '',
+      email: '',
+      mobile: '',
+      postcode: ''
+    });
+    const [err, setErr] = useState({});
+    const set = k => e => {
+      const v = e.target.value;
+      setD(s => ({
+        ...s,
+        [k]: v
+      }));
+      if (err[k]) setErr(s => ({
+        ...s,
+        [k]: undefined
+      }));
+    };
+    const submit = e => {
+      e.preventDefault();
+      const n = {};
+      if (!d.firstName.trim()) n.firstName = 'Required';
+      if (!d.lastName.trim()) n.lastName = 'Required';
+      if (!d.email.trim()) n.email = 'Required';else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) n.email = 'Enter a valid email address';
+      setErr(n);
+      if (Object.keys(n).length) return;
+      onSign && onSign(d);
+    };
+    return React.createElement("form", {
+      className: "pform",
+      onSubmit: submit,
+      noValidate: true
+    }, React.createElement("div", {
+      className: "pform-grid2"
+    }, React.createElement(Input, {
+      label: "First name *",
+      name: "firstName",
+      placeholder: "Jane",
+      value: d.firstName,
+      onChange: set('firstName'),
+      invalid: !!err.firstName,
+      hint: err.firstName,
+      autoComplete: "given-name"
+    }), React.createElement(Input, {
+      label: "Last name *",
+      name: "lastName",
+      placeholder: "Citizen",
+      value: d.lastName,
+      onChange: set('lastName'),
+      invalid: !!err.lastName,
+      hint: err.lastName,
+      autoComplete: "family-name"
+    })), React.createElement(Input, {
+      label: "Email *",
+      type: "email",
+      name: "email",
+      placeholder: "jane@example.com",
+      value: d.email,
+      onChange: set('email'),
+      invalid: !!err.email,
+      hint: err.email,
+      autoComplete: "email"
+    }), React.createElement(Input, {
+      label: "Mobile phone",
+      type: "tel",
+      name: "mobile",
+      placeholder: "0400 000 000",
+      value: d.mobile,
+      onChange: set('mobile'),
+      autoComplete: "tel"
+    }), React.createElement(Input, {
+      label: "Postcode",
+      name: "postcode",
+      placeholder: "2000",
+      value: d.postcode,
+      onChange: set('postcode'),
+      inputMode: "numeric",
+      maxLength: 4,
+      autoComplete: "postal-code"
+    }), React.createElement(Button, {
+      type: "submit",
+      variant: "primary",
+      size: "lg",
+      fullWidth: true
+    }, cta), React.createElement("p", {
+      className: "pform-fine"
+    }, React.createElement("span", {
+      className: "req"
+    }, "*"), " Required. We'll send you campaign updates \u2014 unsubscribe anytime."));
+  }
+  function ThanksCard({
+    count,
+    pc
+  }) {
+    const mapHref = 'map.html' + (pc ? '?pc=' + pc : '');
+    return React.createElement(Card, {
+      accent: "navy",
+      elevated: true
+    }, React.createElement(Badge, {
+      tone: "success"
+    }, "Signed"), React.createElement("h3", {
+      style: {
+        fontSize: '24px',
+        fontWeight: 900,
+        letterSpacing: '-0.02em',
+        margin: '14px 0 8px'
+      }
+    }, "Thank you for standing up."), React.createElement("p", {
+      style: {
+        fontSize: '15px',
+        lineHeight: 1.6,
+        color: 'var(--ink-700)',
+        margin: '0 0 16px'
+      }
+    }, "You're one of ", React.createElement("strong", {
+      style: {
+        color: 'var(--navy-700)'
+      }
+    }, fmt(count)), " Australians demanding fair migration.", pc ? ' We’ve pinned your local impact map — see what’s happening in your suburb.' : ''), React.createElement(Button, {
+      variant: "solid",
+      fullWidth: true,
+      href: mapHref
+    }, "View my local impact \u2192"), React.createElement("div", {
+      style: {
+        height: '8px'
+      }
+    }), React.createElement(Button, {
+      variant: "donate",
+      fullWidth: true,
+      href: "donate.html"
+    }, "Chip in to the campaign"));
+  }
+  function PetitionSection({
     count,
     signed,
+    pc,
     onSign
   }) {
     return React.createElement("section", {
@@ -272,12 +474,10 @@
       className: "demand-list"
     }, ['An immediate reduction in the migration intake.', 'A full review of broken, unsustainable migration policy.', 'A system run in the interests of Australians first.'].map(t => React.createElement("li", {
       key: t
-    }, React.createElement("img", {
-      className: "star",
-      src: A + 'favicon-navy.png',
-      alt: ""
+    }, React.createElement(Star, {
+      size: 18,
+      className: "star"
     }), t)))), React.createElement("div", {
-      ref: petitionRef,
       style: {
         position: 'sticky',
         top: '120px'
@@ -297,53 +497,18 @@
       style: {
         width: pct(count) + '%'
       }
-    }))), signed ? React.createElement(Card, {
-      accent: "navy",
-      elevated: true
-    }, React.createElement(Badge, {
-      tone: "success"
-    }, "Signed"), React.createElement("h3", {
-      style: {
-        fontSize: '24px',
-        fontWeight: 900,
-        letterSpacing: '-0.02em',
-        margin: '14px 0 8px'
-      }
-    }, "Thank you for standing up."), React.createElement("p", {
-      style: {
-        fontSize: '15px',
-        lineHeight: 1.6,
-        color: 'var(--ink-700)',
-        margin: '0 0 16px'
-      }
-    }, "You're one of ", React.createElement("strong", {
-      style: {
-        color: 'var(--navy-700)'
-      }
-    }, fmt(count)), " Australians demanding fair migration. We've opened your ", React.createElement("strong", null, "local impact map"), " \u2014 see what's happening in your suburb."), React.createElement(Button, {
-      variant: "solid",
-      fullWidth: true,
-      onClick: () => document.getElementById('map').scrollIntoView({
-        behavior: 'smooth'
-      })
-    }, "View my local impact \u2193"), React.createElement("div", {
-      style: {
-        height: '8px'
-      }
-    }), React.createElement(Button, {
-      variant: "donate",
-      fullWidth: true,
-      href: "#donate"
-    }, "Chip in to the campaign")) : React.createElement(PetitionForm, {
-      title: "Sign the petition",
-      blurb: "Add your name, then see your suburb's migration impact instantly.",
+    }))), signed ? React.createElement(ThanksCard, {
+      count: count,
+      pc: pc
+    }) : React.createElement(PetitionForm, {
       onSign: onSign
     })))));
   }
-  function MapSection({
+  function MapStage({
     registerApi,
     onSign
   }) {
+    const Tool = window.PostcodeTool;
     return React.createElement("section", {
       id: "map",
       className: "section section--dark"
@@ -363,24 +528,21 @@
       className: "map-lead"
     }, "Migration is decided in Canberra \u2014 but it lands on your street. Enter your postcode for suburb-level intensity, year-on-year change and how your area ranks against the nation.")), React.createElement("div", {
       className: "map-stage"
-    }, React.createElement(PostcodeTool, {
+    }, Tool ? React.createElement(Tool, {
       registerApi: registerApi,
       onSign: onSign
-    }))));
+    }) : null)));
   }
-  function Demand({
-    onSign
-  }) {
+  function Demand() {
     return React.createElement("section", {
       className: "section"
     }, React.createElement("div", {
       className: "container"
     }, React.createElement("div", {
       className: "manifesto"
-    }, React.createElement(Eyebrow, null, "Our demand to Canberra"), React.createElement("img", {
+    }, React.createElement(Eyebrow, null, "Our demand to Canberra"), React.createElement(Star, {
+      size: 40,
       className: "star",
-      src: A + 'favicon-navy.png',
-      alt: "",
       style: {
         display: 'block',
         marginTop: 26
@@ -394,10 +556,10 @@
     }, "broken"), ", unsustainable and putting an unfair strain on Australians."), React.createElement(Button, {
       variant: "primary",
       size: "lg",
-      onClick: onSign
+      href: "petition.html"
     }, "Add your name"))));
   }
-  function Donate() {
+  function DonateBlock() {
     const tiers = [{
       amt: '$25',
       note: 'Reach 500 more voters'
@@ -413,7 +575,7 @@
     const [recurring, setRecurring] = useState(false);
     return React.createElement("section", {
       id: "donate",
-      className: "section section--tint"
+      className: "section"
     }, React.createElement("div", {
       className: "container",
       style: {
@@ -483,9 +645,23 @@
       }
     }, "Secure payment via Stripe \xB7 Authorised by Fair Migration, Australia"))));
   }
-  function Footer({
-    onSign
+  function PageHead({
+    eyebrow,
+    title,
+    lead,
+    dark
   }) {
+    return React.createElement("section", {
+      className: 'page-head' + (dark ? ' page-head--dark' : '')
+    }, React.createElement("div", {
+      className: "container"
+    }, React.createElement(Eyebrow, {
+      variant: dark ? 'light' : undefined
+    }, eyebrow), React.createElement("h1", null, title), lead && React.createElement("p", {
+      className: "lead-p"
+    }, lead)));
+  }
+  function Footer() {
     return React.createElement(React.Fragment, null, React.createElement("div", {
       className: "foot-cta"
     }, React.createElement("div", {
@@ -493,7 +669,7 @@
     }, React.createElement("h2", null, "Australia's future is worth a signature."), React.createElement(Button, {
       variant: "primary",
       size: "lg",
-      onClick: onSign
+      href: "petition.html"
     }, "Sign the petition"))), React.createElement("footer", {
       className: "footer"
     }, React.createElement("div", {
@@ -505,26 +681,31 @@
         alignItems: 'center',
         justifyContent: 'space-between'
       }
+    }, React.createElement("a", {
+      href: "index.html"
     }, React.createElement("img", {
       src: A + 'logo-full.png',
       alt: "Fair Migration",
       style: {
         height: '52px'
       }
-    }), React.createElement("nav", {
+    })), React.createElement("nav", {
       style: {
         display: 'flex',
         gap: '24px',
         fontSize: '14px',
         fontWeight: 600,
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        flexWrap: 'wrap'
       }
     }, React.createElement("a", {
-      href: "#problem"
+      href: "problem.html"
     }, "The problem"), React.createElement("a", {
-      href: "#map"
+      href: "map.html"
     }, "Impact map"), React.createElement("a", {
-      href: "#donate"
+      href: "petition.html"
+    }, "Sign"), React.createElement("a", {
+      href: "donate.html"
     }, "Donate"), React.createElement("a", {
       href: "#"
     }, "Privacy Policy")), React.createElement("div", {
@@ -551,63 +732,28 @@
       }
     }, "\xA9 2026 Fair Migration. All rights reserved. \xB7 Map figures shown are sample data for demonstration.")));
   }
-  function App() {
-    const [count, setCount] = useState(48217);
-    const [signed, setSigned] = useState(false);
-    const petitionRef = useRef(null);
-    const gisApi = useRef(null);
-    useEffect(() => {
-      const id = setInterval(() => setCount(c => c + (Math.random() < 0.6 ? 1 : 0)), 4200);
-      return () => clearInterval(id);
-    }, []);
-    const scrollToPetition = () => {
-      const el = petitionRef.current;
-      if (el) window.scrollTo({
-        top: el.getBoundingClientRect().top + window.scrollY - 120,
-        behavior: 'smooth'
-      });
-    };
-    const scrollToMap = () => document.getElementById('map').scrollIntoView({
-      behavior: 'smooth'
-    });
-    const handleSign = data => {
-      setCount(c => c + 1);
-      setSigned(true);
-      const pc = (data && data.postcode || '').replace(/\D/g, '').slice(0, 4);
-      setTimeout(() => {
-        if (pc && pc.length === 4 && gisApi.current) {
-          gisApi.current.showPostcode(pc);
-          setTimeout(() => document.getElementById('map').scrollIntoView({
-            behavior: 'smooth'
-          }), 120);
-        }
-      }, 350);
-    };
-    return React.createElement("div", null, React.createElement(TopBar, {
-      count: count,
-      onSign: scrollToPetition
-    }), React.createElement(Hero, {
-      count: count,
-      onSign: scrollToPetition,
-      onMap: scrollToMap
-    }), React.createElement(SignatureBar, {
-      count: count,
-      onSign: scrollToPetition
-    }), React.createElement(Problem, null), React.createElement(PetitionBlock, {
-      petitionRef: petitionRef,
-      count: count,
-      signed: signed,
-      onSign: handleSign
-    }), React.createElement(MapSection, {
-      registerApi: api => {
-        gisApi.current = api;
-      },
-      onSign: scrollToPetition
-    }), React.createElement(Demand, {
-      onSign: scrollToPetition
-    }), React.createElement(Donate, null), React.createElement(Footer, {
-      onSign: scrollToPetition
-    }));
-  }
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+  window.FM = {
+    A,
+    GOAL,
+    fmt,
+    pct,
+    clean4,
+    safeGet,
+    safeSet,
+    markSigned,
+    useLiveCount,
+    Eyebrow,
+    Star,
+    SiteNav,
+    Hero,
+    SignatureBar,
+    Problem,
+    PetitionForm,
+    PetitionSection,
+    MapStage,
+    Demand,
+    DonateBlock,
+    PageHead,
+    Footer
+  };
 })();
