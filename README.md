@@ -28,13 +28,18 @@ turning a signature into an immediate, local view of the issue.
 
 ## Running locally
 
-It is a static site. Serve the directory over HTTP (the JSX is transpiled in the
-browser via Babel standalone, and the design-system bundle loads as plain JS):
+It is a fully self-contained static site — no CDN or build step is needed to view
+it. React/ReactDOM are vendored under `assets/vendor/`, and the JSX is precompiled
+to plain JS (`app.js`, `gistool.js`). Serve the directory over HTTP:
 
 ```bash
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```
+
+`app.jsx` / `gistool.jsx` remain the source of truth; `app.js` / `gistool.js` are
+their compiled output. If you edit the `.jsx` files, recompile them with Babel
+(`@babel/preset-react` + `@babel/preset-env`) to regenerate the `.js` files.
 
 ## Notes & next steps
 
