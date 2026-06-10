@@ -56,13 +56,17 @@
 
   /* ---------- hero (full-bleed crowd) ---------- */
   .hero { position: relative; display: flex; flex-direction: column; justify-content: flex-end;
-    min-height: min(90vh, 840px); background-color: var(--navy-900);
-    background-image:
-      linear-gradient(90deg, rgba(6,34,61,.94) 0%, rgba(6,34,61,.82) 34%, rgba(6,34,61,.55) 66%, rgba(6,34,61,.34) 100%),
-      linear-gradient(0deg, rgba(6,34,61,.55) 0%, rgba(6,34,61,0) 40%),
-      url('assets/hero-bg.jpg');
-    background-size: cover; background-position: center; background-repeat: no-repeat; }
-  .hero-left { display: flex; flex-direction: column; justify-content: flex-end;
+    min-height: min(90vh, 840px); background-color: var(--navy-900); overflow: hidden; }
+  /* darkened, higher-contrast photo (the supplied crowd shot is very pale) */
+  .hero::before { content: ''; position: absolute; inset: 0; z-index: 0;
+    background: url('assets/hero-bg.jpg') center/cover no-repeat;
+    filter: grayscale(35%) contrast(1.2) brightness(0.5); }
+  /* navy scrim — heavier behind the text on the left, lighter on the right so the crowd reads */
+  .hero::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(6,34,61,.82) 0%, rgba(6,34,61,.55) 42%, rgba(6,34,61,.18) 100%),
+      linear-gradient(0deg, rgba(6,34,61,.65) 0%, rgba(6,34,61,0) 45%); }
+  .hero-left { display: flex; flex-direction: column; justify-content: flex-end; position: relative; z-index: 1;
     padding: clamp(40px, 5vw, 80px) clamp(28px, 4.5vw, 72px); color: #fff; }
   .hero-inner { max-width: 600px; position: relative; z-index: 1; }
   .hero .display { font-size: clamp(44px, 5.8vw, 80px); color: #fff; margin: 20px 0 24px; }
