@@ -20,6 +20,21 @@
     return <div className={cls}>{children}</div>;
   }
 
+  /* 7-point Commonwealth star — the brand's recurring graphic device */
+  function Star({ size = 42, color = 'var(--navy-700)', className }) {
+    const cx = 50, cy = 50, R = 49, r = 21, N = 7, pts = [];
+    for (let i = 0; i < N * 2; i++) {
+      const rad = i % 2 === 0 ? R : r;
+      const a = (Math.PI / N) * i - Math.PI / 2;
+      pts.push((cx + rad * Math.cos(a)).toFixed(2) + ',' + (cy + rad * Math.sin(a)).toFixed(2));
+    }
+    return (
+      <svg className={className} width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
+        <polygon points={pts.join(' ')} fill={color} />
+      </svg>
+    );
+  }
+
   /* ---------------- sticky top: utility bar + header ---------------- */
   function TopBar({ count, onSign }) {
     return (
@@ -57,16 +72,43 @@
               <Button variant="primary" size="lg" onClick={onSign}>Sign the petition</Button>
               <Button variant="solid" size="lg" onClick={onMap}>See your suburb →</Button>
             </div>
-            <div className="hero-ticker">
-              <img className="tick-star" src={A + 'favicon-white.png'} alt="" />
-              <div>
-                <div className="tick-count">{fmt(count)}</div>
-                <div className="tick-label">Australians have signed</div>
-              </div>
-              <div className="progress"><div className="progress-fill" style={{ width: pct(count) + '%' }} /></div>
-              <div className="goal-label">{fmt(GOAL)} goal</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  /* ---------------- Signature bar (its own band beneath the hero) ---------------- */
+  function SignatureBar({ count, onSign }) {
+    const p = pct(count);
+    const remaining = Math.max(0, GOAL - count);
+    const milestones = [25000, 50000, GOAL];
+    return (
+      <section className="sigbar" aria-label="Petition signature count">
+        <div className="container container--wide sigbar-inner">
+          <div className="sigbar-count">
+            <Star size={44} className="sigbar-star" />
+            <div>
+              <div className="sigbar-num">{fmt(count)}</div>
+              <div className="sigbar-label">Australians have signed</div>
             </div>
           </div>
+
+          <div className="sigbar-progress">
+            <div className="sigbar-track">
+              <div className="sigbar-fill" style={{ width: p + '%' }} />
+              {milestones.map((m) => (
+                <span key={m} className="sigbar-tick" style={{ left: pct(m) + '%' }} />
+              ))}
+              <span className="sigbar-bubble" style={{ left: p + '%' }}>{Math.round(p)}%</span>
+            </div>
+            <div className="sigbar-meta">
+              <span><b>{fmt(remaining)}</b> more to reach our goal of {fmt(GOAL)}</span>
+              <span className="sigbar-live"><span className="sigbar-dot" /> Updating live</span>
+            </div>
+          </div>
+
+          <Button variant="primary" size="lg" onClick={onSign}>Add your name</Button>
         </div>
       </section>
     );
@@ -305,6 +347,7 @@
       <div>
         <TopBar count={count} onSign={scrollToPetition} />
         <Hero count={count} onSign={scrollToPetition} onMap={scrollToMap} />
+        <SignatureBar count={count} onSign={scrollToPetition} />
         <Problem />
         <PetitionBlock petitionRef={petitionRef} count={count} signed={signed} onSign={handleSign} />
         <MapSection registerApi={(api) => { gisApi.current = api; }} onSign={scrollToPetition} />

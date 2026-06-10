@@ -30,6 +30,33 @@
       className: cls
     }, children);
   }
+  function Star({
+    size = 42,
+    color = 'var(--navy-700)',
+    className
+  }) {
+    const cx = 50,
+      cy = 50,
+      R = 49,
+      r = 21,
+      N = 7,
+      pts = [];
+    for (let i = 0; i < N * 2; i++) {
+      const rad = i % 2 === 0 ? R : r;
+      const a = Math.PI / N * i - Math.PI / 2;
+      pts.push((cx + rad * Math.cos(a)).toFixed(2) + ',' + (cy + rad * Math.sin(a)).toFixed(2));
+    }
+    return React.createElement("svg", {
+      className: className,
+      width: size,
+      height: size,
+      viewBox: "0 0 100 100",
+      "aria-hidden": "true"
+    }, React.createElement("polygon", {
+      points: pts.join(' '),
+      fill: color
+    }));
+  }
   function TopBar({
     count,
     onSign
@@ -106,26 +133,60 @@
       variant: "solid",
       size: "lg",
       onClick: onMap
-    }, "See your suburb \u2192")), React.createElement("div", {
-      className: "hero-ticker"
-    }, React.createElement("img", {
-      className: "tick-star",
-      src: A + 'favicon-white.png',
-      alt: ""
-    }), React.createElement("div", null, React.createElement("div", {
-      className: "tick-count"
-    }, fmt(count)), React.createElement("div", {
-      className: "tick-label"
-    }, "Australians have signed")), React.createElement("div", {
-      className: "progress"
+    }, "See your suburb \u2192")))));
+  }
+  function SignatureBar({
+    count,
+    onSign
+  }) {
+    const p = pct(count);
+    const remaining = Math.max(0, GOAL - count);
+    const milestones = [25000, 50000, GOAL];
+    return React.createElement("section", {
+      className: "sigbar",
+      "aria-label": "Petition signature count"
     }, React.createElement("div", {
-      className: "progress-fill",
+      className: "container container--wide sigbar-inner"
+    }, React.createElement("div", {
+      className: "sigbar-count"
+    }, React.createElement(Star, {
+      size: 44,
+      className: "sigbar-star"
+    }), React.createElement("div", null, React.createElement("div", {
+      className: "sigbar-num"
+    }, fmt(count)), React.createElement("div", {
+      className: "sigbar-label"
+    }, "Australians have signed"))), React.createElement("div", {
+      className: "sigbar-progress"
+    }, React.createElement("div", {
+      className: "sigbar-track"
+    }, React.createElement("div", {
+      className: "sigbar-fill",
       style: {
-        width: pct(count) + '%'
+        width: p + '%'
       }
-    })), React.createElement("div", {
-      className: "goal-label"
-    }, fmt(GOAL), " goal")))));
+    }), milestones.map(m => React.createElement("span", {
+      key: m,
+      className: "sigbar-tick",
+      style: {
+        left: pct(m) + '%'
+      }
+    })), React.createElement("span", {
+      className: "sigbar-bubble",
+      style: {
+        left: p + '%'
+      }
+    }, Math.round(p), "%")), React.createElement("div", {
+      className: "sigbar-meta"
+    }, React.createElement("span", null, React.createElement("b", null, fmt(remaining)), " more to reach our goal of ", fmt(GOAL)), React.createElement("span", {
+      className: "sigbar-live"
+    }, React.createElement("span", {
+      className: "sigbar-dot"
+    }), " Updating live"))), React.createElement(Button, {
+      variant: "primary",
+      size: "lg",
+      onClick: onSign
+    }, "Add your name")));
   }
   function Problem() {
     const items = [{
@@ -529,6 +590,9 @@
       count: count,
       onSign: scrollToPetition,
       onMap: scrollToMap
+    }), React.createElement(SignatureBar, {
+      count: count,
+      onSign: scrollToPetition
     }), React.createElement(Problem, null), React.createElement(PetitionBlock, {
       petitionRef: petitionRef,
       count: count,
