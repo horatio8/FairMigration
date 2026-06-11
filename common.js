@@ -524,7 +524,7 @@
       }
     }, "your"), " postcode absorbing?"), React.createElement("p", {
       className: "map-lead"
-    }, "Migration is decided in Canberra \u2014 but it lands on your street. Enter your postcode for suburb-level intensity, year-on-year change and how your area ranks against the nation.")), React.createElement("div", {
+    }, "Migration is decided in Canberra \u2014 but it lands on your street. Enter your postcode for real ABS figures on migration intensity, population growth and rental stress \u2014 and how your area ranks against the nation.")), React.createElement("div", {
       className: "map-stage"
     }, Tool ? React.createElement(Tool, {
       registerApi: registerApi,

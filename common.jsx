@@ -281,8 +281,8 @@
             <Eyebrow variant="light">Local impact map</Eyebrow>
             <h2 className="h2-display">How much is <span style={{ color: 'var(--coral-400)' }}>your</span> postcode absorbing?</h2>
             <p className="map-lead">
-              Migration is decided in Canberra — but it lands on your street. Enter your postcode for suburb-level
-              intensity, year-on-year change and how your area ranks against the nation.
+              Migration is decided in Canberra — but it lands on your street. Enter your postcode for real ABS
+              figures on migration intensity, population growth and rental stress — and how your area ranks against the nation.
             </p>
           </div>
           <div className="map-stage">

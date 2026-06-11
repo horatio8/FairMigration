@@ -4,26 +4,21 @@
   const {
     useState,
     useMemo,
-    useRef,
     useEffect
   } = React;
-  function mulberry32(a) {
-    return function () {
-      a |= 0;
-      a = a + 0x6D2B79F5 | 0;
-      let t = Math.imul(a ^ a >>> 15, 1 | a);
-      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-  }
-  function seedFrom(str) {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
+  const D = window.POSTCODE_DATA || {};
+  const PCS = Object.keys(D);
+  const F = {
+    pop: 0,
+    ob: 1,
+    growth: 2,
+    rentInc: 3,
+    rent: 4,
+    income: 5,
+    migIdx: 6,
+    growthIdx: 7,
+    rentIdx: 8
+  };
   const STOPS = [[0, [31, 122, 77]], [0.28, [127, 160, 60]], [0.5, [219, 158, 32]], [0.72, [200, 92, 38]], [1, [162, 1, 0]]];
   function heat(v) {
     v = Math.max(0, Math.min(1, v));
@@ -38,175 +33,144 @@
     }
     return 'rgb(162,1,0)';
   }
-  const METROS = {
-    '2000': {
-      city: 'Sydney',
-      suburb: 'Sydney CBD',
-      state: 'NSW',
-      pool: ['Haymarket', 'Ultimo', 'Pyrmont', 'Surry Hills', 'Chippendale', 'Glebe', 'Redfern', 'Darlinghurst', 'Woolloomooloo', 'Millers Point', 'The Rocks', 'Barangaroo', 'Zetland', 'Waterloo', 'Newtown', 'Erskineville', 'Alexandria', 'Camperdown', 'Forest Lodge', 'Rosebery', 'Eveleigh', 'Kensington', 'Mascot', 'Botany']
-    },
-    '3000': {
-      city: 'Melbourne',
-      suburb: 'Melbourne CBD',
-      state: 'VIC',
-      pool: ['Carlton', 'Docklands', 'Southbank', 'North Melbourne', 'East Melbourne', 'Fitzroy', 'Richmond', 'South Yarra', 'Collingwood', 'Abbotsford', 'Brunswick', 'Footscray', 'Kensington', 'Flemington', 'Parkville', 'West Melbourne', 'Cremorne', 'Prahran', 'St Kilda', 'Port Melbourne', 'South Melbourne', 'Albert Park', 'Carlton North', 'Fitzroy North']
-    },
-    '4000': {
-      city: 'Brisbane',
-      suburb: 'Brisbane City',
-      state: 'QLD',
-      pool: ['Spring Hill', 'Petrie Terrace', 'Fortitude Valley', 'Kangaroo Point', 'South Brisbane', 'West End', 'Milton', 'Paddington', 'New Farm', 'Teneriffe', 'Bowen Hills', 'Newstead', 'Woolloongabba', 'East Brisbane', 'Highgate Hill', 'Red Hill', 'Kelvin Grove', 'Herston', 'Auchenflower', 'Toowong', 'Dutton Park', 'Annerley', 'Greenslopes', 'Coorparoo']
-    },
-    '5000': {
-      city: 'Adelaide',
-      suburb: 'Adelaide',
-      state: 'SA',
-      pool: ['North Adelaide', 'Kent Town', 'Hackney', 'Parkside', 'Unley', 'Norwood', 'Wayville', 'Goodwood', 'Eastwood', 'Frewville', 'Hindmarsh', 'Bowden', 'Brompton', 'Thebarton', 'Mile End', 'Prospect', 'Walkerville', 'Stepney', 'College Park', 'Gilberton', 'Medindie', 'Fitzroy', 'Ovingham', 'Kilkenny']
-    },
-    '6000': {
-      city: 'Perth',
-      suburb: 'Perth CBD',
-      state: 'WA',
-      pool: ['Northbridge', 'West Perth', 'East Perth', 'Highgate', 'Leederville', 'Subiaco', 'Mount Lawley', 'North Perth', 'Maylands', 'Burswood', 'Victoria Park', 'South Perth', 'Como', 'Nedlands', 'Crawley', 'West Leederville', 'Wembley', 'Glendalough', 'Joondanna', 'Mount Hawthorn', 'Bayswater', 'Bentley', 'Cloverdale', 'Belmont']
-    },
-    '2600': {
-      city: 'Canberra',
-      suburb: 'Canberra',
-      state: 'ACT',
-      pool: ['Barton', 'Forrest', 'Kingston', 'Griffith', 'Deakin', 'Yarralumla', 'Acton', 'Turner', 'Braddon', 'Reid', 'Campbell', 'Ainslie', 'Dickson', 'Lyneham', 'O\u2019Connor', 'Watson', 'Hackett', 'Downer', 'Fyshwick', 'Narrabundah', 'Red Hill', 'Manuka', 'Civic', 'Parkes']
-    }
-  };
-  const GENERIC = ['Riverside', 'Parkdale', 'Hillcrest', 'Westfield', 'Eastgate', 'Springvale', 'Brookfield', 'Greenfield', 'Fairview', 'Lakeside', 'Highbury', 'Woodvale', 'Northgate', 'Sunnybank', 'Glenwood', 'Bayswater', 'Ashfield', 'Kingsford', 'Wentworth', 'Carrington', 'Belmore', 'Granville', 'Ashwood', 'Oakleigh'];
-  function metroFor(pc) {
-    if (METROS[pc]) return METROS[pc];
-    const n = parseInt(pc, 10) || 0;
-    if (n >= 2000 && n < 2600) return METROS['2000'];
-    if (n >= 2600 && n < 3000) return METROS['2600'];
-    if (n >= 3000 && n < 4000) return METROS['3000'];
-    if (n >= 4000 && n < 5000) return METROS['4000'];
-    if (n >= 5000 && n < 6000) return METROS['5000'];
-    if (n >= 6000 && n < 7000) return METROS['6000'];
-    return {
-      city: 'your region',
-      suburb: 'Your suburb',
-      state: 'AUS',
-      pool: GENERIC
-    };
-  }
   const LAYERS = [{
-    id: 'nom',
-    label: 'Net overseas migration',
-    source: 'Dept. of Home Affairs',
-    unit: 'new arrivals / yr',
-    bias: 0.0
+    id: 'mig',
+    label: 'Migration intensity',
+    short: 'Migration index',
+    idx: F.migIdx,
+    raw: F.ob,
+    rawLabel: 'Overseas-born share',
+    rawUnit: '%',
+    source: 'ABS Census 2021 — overseas-born share (proxy)'
   }, {
     id: 'growth',
-    label: 'Population growth rate',
-    source: 'ABS Census',
-    unit: 'YoY growth',
-    bias: 0.12
+    label: 'Population growth',
+    short: 'Growth index',
+    idx: F.growthIdx,
+    raw: F.growth,
+    rawLabel: 'Population growth 2016–21',
+    rawUnit: '%',
+    source: 'ABS Census 2016 & 2021'
   }, {
-    id: 'rental',
-    label: 'Rental stress index',
-    source: 'Fair Migration analysis',
-    unit: 'stress score',
-    bias: -0.06
+    id: 'rent',
+    label: 'Rental stress',
+    short: 'Rent-stress index',
+    idx: F.rentIdx,
+    raw: F.rentInc,
+    rawLabel: 'Rent-to-income',
+    rawUnit: '%',
+    source: 'ABS Census 2021 — rent-to-income'
   }];
-  function buildArea(pc, layerId) {
-    const m = metroFor(pc);
-    const rnd = mulberry32(seedFrom(pc + ':' + layerId));
-    const layer = LAYERS.find(l => l.id === layerId);
-    const N = 5;
-    const cells = [];
-    const names = [m.suburb, ...m.pool];
-    let ni = 1;
-    for (let r = 0; r < N; r++) {
-      for (let c = 0; c < N; c++) {
-        const isCentre = r === 2 && c === 2;
-        const dist = Math.abs(r - 2) + Math.abs(c - 2);
-        let v = 0.86 - dist * 0.09 + (rnd() - 0.5) * 0.42 + layer.bias;
-        v = Math.max(0.05, Math.min(0.99, v));
-        const name = isCentre ? m.suburb : names[ni++ % names.length];
-        const yoy = +((v - 0.4) * 18 + (rnd() - 0.5) * 6).toFixed(1);
-        const arrivals = Math.round(180 + v * 5200 + rnd() * 600);
-        cells.push({
-          r,
-          c,
-          name,
-          v,
-          yoy,
-          arrivals,
-          isCentre
-        });
+  function stateOf(pc) {
+    const n = parseInt(pc, 10) || 0;
+    if (n >= 2600 && n <= 2618 || n >= 2900 && n <= 2920 || n >= 200 && n <= 299) return 'ACT';
+    if (n >= 1000 && n <= 2599 || n >= 2619 && n <= 2899 || n >= 2921 && n <= 2999) return 'NSW';
+    if (n >= 3000 && n <= 3999 || n >= 8000 && n <= 8999) return 'VIC';
+    if (n >= 4000 && n <= 4999 || n >= 9000 && n <= 9999) return 'QLD';
+    if (n >= 5000 && n <= 5999) return 'SA';
+    if (n >= 6000 && n <= 6999) return 'WA';
+    if (n >= 7000 && n <= 7999) return 'TAS';
+    if (n >= 800 && n <= 999) return 'NT';
+    return 'NSW';
+  }
+  const RANK = {};
+  function ranksFor(field) {
+    if (RANK[field]) return RANK[field];
+    const arr = PCS.filter(p => D[p][field] != null).sort((a, b) => D[b][field] - D[a][field]);
+    const map = {};
+    arr.forEach((p, i) => {
+      map[p] = i + 1;
+    });
+    return RANK[field] = {
+      map,
+      count: arr.length
+    };
+  }
+  const SAVG = {};
+  function stateAvg(field) {
+    if (SAVG[field]) return SAVG[field];
+    const sum = {},
+      cnt = {};
+    for (const p of PCS) {
+      const v = D[p][field];
+      if (v == null) continue;
+      const s = stateOf(p);
+      sum[s] = (sum[s] || 0) + v;
+      cnt[s] = (cnt[s] || 0) + 1;
+    }
+    const m = {};
+    for (const s in sum) m[s] = sum[s] / cnt[s];
+    return SAVG[field] = m;
+  }
+  function topPostcode(stateCode, field) {
+    let best = null,
+      bv = -1;
+    for (const p of PCS) {
+      if (stateOf(p) !== stateCode) continue;
+      const v = D[p][field];
+      if (v != null && v > bv) {
+        bv = v;
+        best = p;
       }
     }
-    const centre = cells.find(x => x.isCentre);
-    return {
-      meta: m,
-      layer,
-      cells,
-      centre
-    };
+    return best;
+  }
+  function regionGrid(pc, field) {
+    const n = parseInt(pc, 10),
+      st = stateOf(pc);
+    let cand = PCS.filter(p => stateOf(p) === st && D[p][field] != null);
+    cand.sort((a, b) => Math.abs(parseInt(a, 10) - n) - Math.abs(parseInt(b, 10) - n));
+    let near = cand.slice(0, 25);
+    if (near.indexOf(pc) < 0 && D[pc]) {
+      near[near.length - 1] = pc;
+    }
+    near.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+    return near;
   }
   const STATES = [{
     code: 'WA',
     name: 'Western Australia',
     col: 1,
-    row: 2,
-    v: 0.62,
-    pc: '6000'
+    row: 2
   }, {
     code: 'NT',
     name: 'Northern Territory',
     col: 2,
-    row: 1,
-    v: 0.34,
-    pc: '0800'
+    row: 1
   }, {
     code: 'SA',
     name: 'South Australia',
     col: 2,
-    row: 2,
-    v: 0.55,
-    pc: '5000'
+    row: 2
   }, {
     code: 'QLD',
     name: 'Queensland',
     col: 3,
-    row: 1,
-    v: 0.78,
-    pc: '4000'
+    row: 1
   }, {
     code: 'NSW',
     name: 'New South Wales',
     col: 3,
-    row: 2,
-    v: 0.95,
-    pc: '2000'
+    row: 2
   }, {
     code: 'ACT',
     name: 'Aust. Capital Terr.',
     col: 4,
-    row: 2,
-    v: 0.71,
-    pc: '2600'
+    row: 2
   }, {
     code: 'VIC',
     name: 'Victoria',
     col: 3,
-    row: 3,
-    v: 0.92,
-    pc: '3000'
+    row: 3
   }, {
     code: 'TAS',
     name: 'Tasmania',
     col: 3,
-    row: 4,
-    v: 0.41,
-    pc: '7000'
+    row: 4
   }];
   function StateTile({
     s,
+    v,
     onPick
   }) {
     const [hover, setHover] = useState(false);
@@ -217,7 +181,7 @@
       style: {
         gridColumn: s.col,
         gridRow: s.row,
-        background: heat(s.v),
+        background: heat(v / 100),
         border: 'none',
         cursor: 'pointer',
         borderRadius: '6px',
@@ -235,7 +199,7 @@
         transition: 'transform .12s ease, box-shadow .12s ease',
         textShadow: '0 1px 2px rgba(0,0,0,.35)'
       },
-      title: `${s.name} — click to drill in`
+      title: `${s.name} — average ${Math.round(v)} / 100 · click to drill in`
     }, React.createElement("span", {
       style: {
         fontSize: '17px',
@@ -248,7 +212,7 @@
         fontWeight: 700,
         opacity: 0.95
       }
-    }, Math.round(s.v * 100)));
+    }, Math.round(v)));
   }
   function Legend() {
     const grad = `linear-gradient(90deg, ${heat(0)}, ${heat(0.28)}, ${heat(0.5)}, ${heat(0.72)}, ${heat(1)})`;
@@ -274,6 +238,12 @@
   function Yoy({
     v
   }) {
+    if (v == null) return React.createElement("span", {
+      style: {
+        color: 'var(--ink-400)',
+        fontWeight: 700
+      }
+    }, "n/a");
     const up = v >= 0;
     return React.createElement("span", {
       style: {
@@ -284,9 +254,39 @@
       }
     }, up ? '▲' : '▼', " ", Math.abs(v).toFixed(1), "%");
   }
-  function SuburbGrid({
-    area,
+  function Row({
+    label,
+    value,
+    muted
+  }) {
+    return React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        gap: '12px',
+        fontSize: '14px',
+        borderBottom: '1px dashed var(--line-200)',
+        paddingBottom: '8px'
+      }
+    }, React.createElement("span", {
+      style: {
+        color: 'var(--ink-500)',
+        fontWeight: 600
+      }
+    }, label), React.createElement("span", {
+      style: {
+        color: muted ? 'var(--ink-500)' : 'var(--ink-900)',
+        fontWeight: muted ? 600 : 800,
+        textAlign: 'right'
+      }
+    }, value));
+  }
+  function PostcodeGrid({
+    cells,
+    field,
     selected,
+    centre,
     onSelect
   }) {
     return React.createElement("div", {
@@ -296,21 +296,23 @@
         gap: '6px',
         aspectRatio: '1 / 1'
       }
-    }, area.cells.map((cell, i) => {
-      const isSel = selected && selected.r === cell.r && selected.c === cell.c;
+    }, cells.map(pc => {
+      const v = D[pc][field];
+      const isSel = pc === selected,
+        isCentre = pc === centre;
       return React.createElement("button", {
-        key: i,
-        onClick: () => onSelect(cell),
+        key: pc,
+        onClick: () => onSelect(pc),
         style: {
-          background: heat(cell.v),
+          background: heat((v || 0) / 100),
           border: 'none',
           cursor: 'pointer',
           position: 'relative',
           borderRadius: '4px',
           padding: '6px 5px',
           overflow: 'hidden',
-          outline: cell.isCentre ? '3px solid #0d3b66' : 'none',
-          outlineOffset: cell.isCentre ? '-3px' : 0,
+          outline: isCentre ? '3px solid #0d3b66' : 'none',
+          outlineOffset: isCentre ? '-3px' : 0,
           boxShadow: isSel ? '0 0 0 3px #fff, 0 0 0 5px #0d3b66' : 'none',
           transition: 'box-shadow .12s ease',
           textAlign: 'left',
@@ -318,38 +320,39 @@
           alignItems: 'flex-end',
           minHeight: 0
         },
-        title: `${cell.name} — ${Math.round(cell.v * 100)} / 100`
+        title: `${pc} — ${Math.round(v)} / 100`
       }, React.createElement("span", {
         style: {
           fontFamily: 'var(--font-sans)',
-          fontSize: '10.5px',
-          fontWeight: 700,
+          fontSize: '11px',
+          fontWeight: 800,
           lineHeight: 1.1,
           color: '#fff',
           textShadow: '0 1px 2px rgba(0,0,0,.5)'
         }
-      }, cell.name), cell.isCentre && React.createElement("span", {
+      }, pc), isCentre && React.createElement("span", {
         style: {
           position: 'absolute',
           top: 4,
           right: 5,
           fontSize: '11px'
         },
-        title: "Your suburb"
+        title: "Your postcode"
       }, "\u2605"));
     }));
   }
   function StatPanel({
-    area,
-    sel,
-    layerId,
+    pc,
+    layer,
     setLayer,
     onBackNational,
     onSign
   }) {
-    const cell = sel || area.centre;
-    const pct = Math.round(cell.v * 100);
-    const rank = Math.max(1, Math.round((1 - cell.v) * 670) + 1);
+    const rec = D[pc];
+    const idxVal = rec[layer.idx];
+    const ranks = ranksFor(layer.idx);
+    const rank = ranks.map[pc];
+    const rawVal = rec[layer.raw];
     return React.createElement("div", {
       style: {
         display: 'flex',
@@ -364,22 +367,22 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, cell.isCentre ? 'Your suburb' : 'Selected suburb'), React.createElement("div", {
+    }, "Postcode"), React.createElement("div", {
       style: {
-        fontSize: '26px',
+        fontSize: '30px',
         fontWeight: 900,
         letterSpacing: '-0.02em',
         color: 'var(--ink-900)',
         marginTop: '2px',
         lineHeight: 1.1
       }
-    }, cell.name), React.createElement("div", {
+    }, pc), React.createElement("div", {
       style: {
         fontSize: '14px',
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, area.meta.city, " \xB7 ", area.meta.state)), React.createElement("div", {
+    }, stateOf(pc), " \xB7 ", rec[F.pop] != null ? rec[F.pop].toLocaleString() + ' residents (2021)' : 'population n/a')), React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -400,7 +403,7 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, "Intensity"), React.createElement("div", {
+    }, layer.short), React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'baseline',
@@ -410,10 +413,10 @@
       style: {
         fontSize: '30px',
         fontWeight: 900,
-        color: heat(cell.v),
+        color: heat((idxVal || 0) / 100),
         letterSpacing: '-0.02em'
       }
-    }, pct), React.createElement("span", {
+    }, idxVal == null ? '—' : Math.round(idxVal)), React.createElement("span", {
       style: {
         fontSize: '13px',
         color: 'var(--ink-400)',
@@ -434,12 +437,12 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, "Year on year"), React.createElement("div", {
+    }, "Growth 2016\u201321"), React.createElement("div", {
       style: {
         marginTop: '6px'
       }
     }, React.createElement(Yoy, {
-      v: cell.yoy
+      v: rec[F.growth]
     })))), React.createElement("div", {
       style: {
         display: 'flex',
@@ -447,14 +450,20 @@
         gap: '8px'
       }
     }, React.createElement(Row, {
-      label: area.layer.label,
-      value: cell.arrivals.toLocaleString() + ' ' + area.layer.unit.replace(' / yr', '/yr')
+      label: layer.rawLabel,
+      value: rawVal == null ? 'n/a' : rawVal.toFixed(1) + layer.rawUnit
+    }), React.createElement(Row, {
+      label: "Median weekly rent",
+      value: rec[F.rent] == null ? 'n/a' : '$' + rec[F.rent].toLocaleString()
+    }), React.createElement(Row, {
+      label: "Median weekly income",
+      value: rec[F.income] == null ? 'n/a' : '$' + rec[F.income].toLocaleString()
     }), React.createElement(Row, {
       label: "National rank",
-      value: '#' + rank + ' of 673 LGAs'
+      value: rank ? '#' + rank.toLocaleString() + ' of ' + ranks.count.toLocaleString() : 'n/a'
     }), React.createElement(Row, {
       label: "Data source",
-      value: area.layer.source,
+      value: layer.source,
       muted: true
     })), React.createElement("div", null, React.createElement("div", {
       style: {
@@ -472,7 +481,7 @@
         gap: '6px'
       }
     }, LAYERS.map(l => {
-      const on = l.id === layerId;
+      const on = l.id === layer.id;
       return React.createElement("button", {
         key: l.id,
         onClick: () => setLayer(l.id),
@@ -533,15 +542,15 @@
         lineHeight: 1.6,
         color: 'var(--ink-700)'
       }
-    }, React.createElement("strong", {
+    }, "Postcode ", React.createElement("strong", {
       style: {
         color: 'var(--ink-900)'
       }
-    }, cell.name), " is absorbing migration", ' ', React.createElement("strong", {
+    }, pc), " sits", ' ', React.createElement("strong", {
       style: {
-        color: heat(cell.v)
+        color: heat((idxVal || 0) / 100)
       }
-    }, pct > 66 ? 'far above' : pct > 40 ? 'above' : 'near'), ' ', "the national average. This is the strain on ", React.createElement("span", {
+    }, idxVal > 66 ? 'far above' : idxVal > 40 ? 'above' : 'near'), ' ', "the national average on ", layer.label.toLowerCase(), ". This is the strain on ", React.createElement("span", {
       style: {
         fontWeight: 800
       }
@@ -580,66 +589,46 @@
       }
     }, "\u2190 Back to national map")));
   }
-  function Row({
-    label,
-    value,
-    muted
-  }) {
-    return React.createElement("div", {
-      style: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'baseline',
-        gap: '12px',
-        fontSize: '14px',
-        borderBottom: '1px dashed var(--line-200)',
-        paddingBottom: '8px'
-      }
-    }, React.createElement("span", {
-      style: {
-        color: 'var(--ink-500)',
-        fontWeight: 600
-      }
-    }, label), React.createElement("span", {
-      style: {
-        color: muted ? 'var(--ink-500)' : 'var(--ink-900)',
-        fontWeight: muted ? 600 : 800,
-        textAlign: 'right'
-      }
-    }, value));
-  }
   function PostcodeTool({
     initialPostcode,
     onSign,
     registerApi
   }) {
     const [mode, setMode] = useState('national');
-    const [pc, setPc] = useState(initialPostcode || '');
+    const [pc, setPc] = useState(initialPostcode && D[initialPostcode] ? initialPostcode : '');
     const [entry, setEntry] = useState('');
-    const [layerId, setLayerId] = useState('nom');
+    const [layerId, setLayerId] = useState('mig');
     const [sel, setSel] = useState(null);
     const [err, setErr] = useState('');
-    const area = useMemo(() => pc ? buildArea(pc, layerId) : null, [pc, layerId]);
+    const layer = LAYERS.find(l => l.id === layerId);
+    const cells = useMemo(() => pc && D[pc] ? regionGrid(pc, layer.idx) : [], [pc, layerId]);
+    const savg = useMemo(() => stateAvg(layer.idx), [layerId]);
     function go(code) {
-      const v = String(code).trim();
-      if (!/^\d{4}$/.test(v)) {
-        setErr('Enter a valid 4-digit postcode');
+      const v = String(code || '').trim();
+      if (!/^\d{3,4}$/.test(v)) {
+        setErr('Enter a valid postcode');
+        return;
+      }
+      const key = v.length === 3 ? '0' + v : v;
+      if (!D[key]) {
+        setErr('No ABS data for postcode ' + key + ' — try a nearby one');
         return;
       }
       setErr('');
-      setPc(v);
-      setSel(null);
+      setPc(key);
+      setSel(key);
       setMode('local');
     }
     useEffect(() => {
       if (registerApi) registerApi({
         showPostcode: code => {
-          setEntry(code || '');
-          go(code);
+          const k = String(code || '').replace(/\D/g, '').slice(0, 4);
+          setEntry(k);
+          go(k);
         }
       });
     }, []);
-    const cell = sel || area && area.centre;
+    const active = sel && D[sel] ? sel : pc;
     return React.createElement("div", {
       style: {
         background: '#fff',
@@ -714,7 +703,8 @@
         color: 'var(--coral-400)',
         fontSize: '12px',
         fontWeight: 700,
-        marginTop: '5px'
+        marginTop: '5px',
+        maxWidth: '230px'
       }
     }, err)), React.createElement("button", {
       type: "submit",
@@ -733,7 +723,7 @@
       },
       onMouseEnter: e => e.currentTarget.style.background = 'var(--red-600)',
       onMouseLeave: e => e.currentTarget.style.background = 'var(--red-500)'
-    }, mode === 'national' ? 'View my area' : 'Update'))), mode === 'national' || !area ? React.createElement("div", {
+    }, mode === 'national' ? 'View my area' : 'Update'))), mode === 'national' || !D[pc] ? React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1.1fr 0.9fr',
@@ -756,9 +746,13 @@
     }, STATES.map(s => React.createElement(StateTile, {
       key: s.code,
       s: s,
+      v: savg[s.code] || 0,
       onPick: st => {
-        setEntry(st.pc);
-        go(st.pc);
+        const top = topPostcode(st.code, layer.idx);
+        if (top) {
+          setEntry(top);
+          go(top);
+        }
       }
     }))), React.createElement("div", {
       style: {
@@ -785,14 +779,14 @@
       style: {
         color: 'var(--red-500)'
       }
-    }, "your street.")), React.createElement("p", {
+    }, "your postcode.")), React.createElement("p", {
       style: {
         margin: '0 0 16px',
         fontSize: '15px',
         lineHeight: 1.65,
         color: 'var(--ink-700)'
       }
-    }, "Enter your postcode to reveal how much migration ", React.createElement("strong", null, "your own suburb"), " is absorbing \u2014 and how fast it's climbing year on year. Tap any state to drill in."), React.createElement("ul", {
+    }, "Enter your postcode to see real ABS figures for ", React.createElement("strong", null, "your area"), " \u2014 migration intensity, population growth and rental stress, ranked against every postcode in Australia. Tap any state for its busiest postcode."), React.createElement("ul", {
       style: {
         margin: 0,
         padding: 0,
@@ -801,7 +795,7 @@
         flexDirection: 'column',
         gap: '10px'
       }
-    }, ['Suburb-level intensity, colour-coded', 'Year-over-year change indicators', 'Switch between official data layers'].map(t => React.createElement("li", {
+    }, ['Real per-postcode figures from the ABS Census', 'Migration, growth and rental-stress layers', 'Ranked against 2,532 postcodes nationwide'].map(t => React.createElement("li", {
       key: t,
       style: {
         display: 'flex',
@@ -841,21 +835,23 @@
         color: 'var(--ink-900)',
         whiteSpace: 'nowrap'
       }
-    }, area.meta.city, " ", React.createElement("span", {
+    }, stateOf(pc), " ", React.createElement("span", {
       style: {
         color: 'var(--ink-400)',
         fontWeight: 700
       }
-    }, "\xB7 ", pc)), React.createElement("div", {
+    }, "\xB7 near ", pc)), React.createElement("div", {
       style: {
         fontSize: '12px',
         fontWeight: 700,
         color: 'var(--ink-500)',
         textAlign: 'right'
       }
-    }, area.layer.label)), React.createElement(SuburbGrid, {
-      area: area,
-      selected: cell,
+    }, layer.label)), React.createElement(PostcodeGrid, {
+      cells: cells,
+      field: layer.idx,
+      selected: active,
+      centre: pc,
       onSelect: setSel
     }), React.createElement("div", {
       style: {
@@ -868,14 +864,13 @@
         color: 'var(--ink-400)',
         fontWeight: 600
       }
-    }, "\u2605 Your suburb. Tap any tile for its figures. Sample data shown for demonstration \u2014 live ABS & Home Affairs layers to be connected.")), React.createElement("div", {
+    }, "\u2605 Your postcode. Tap any tile for its figures. Tiles are nearby postcodes in ", stateOf(pc), ". Real ABS Census 2021/2016 data (Postal Areas).")), React.createElement("div", {
       style: {
         padding: '26px'
       }
     }, React.createElement(StatPanel, {
-      area: area,
-      sel: sel,
-      layerId: layerId,
+      pc: active,
+      layer: layer,
       setLayer: setLayerId,
       onBackNational: () => {
         setMode('national');
