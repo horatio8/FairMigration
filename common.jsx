@@ -62,7 +62,6 @@
       <div className="site-top">
         <div className="util-bar">
           <div className="util-inner">
-            <span className="util-hide util-dim">Authorised by Fair Migration · Australia</span>
             <span className="util-count">
               <img className="tick-star" src={A + 'favicon-white.png'} alt="" style={{ width: 14, height: 14 }} />
               <b>{fmt(count != null ? count : 48217)}</b>&nbsp;Australians have signed ·{' '}
@@ -345,7 +344,7 @@
           </label>
           <div>
             <Button variant="donate" size="lg">Donate {tiers[sel].amt}{recurring ? '/mo' : ''} securely</Button>
-            <p style={{ fontSize: '13px', color: 'var(--ink-400)', margin: '14px 0 0', fontWeight: 600 }}>Secure payment via Stripe · Authorised by Fair Migration, Australia</p>
+            <p style={{ fontSize: '13px', color: 'var(--ink-400)', margin: '14px 0 0', fontWeight: 600 }}>Secure payment via Stripe</p>
           </div>
         </div>
       </section>

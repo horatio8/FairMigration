@@ -96,8 +96,6 @@
     }, React.createElement("div", {
       className: "util-inner"
     }, React.createElement("span", {
-      className: "util-hide util-dim"
-    }, "Authorised by Fair Migration \xB7 Australia"), React.createElement("span", {
       className: "util-count"
     }, React.createElement("img", {
       className: "tick-star",
@@ -643,7 +641,7 @@
         margin: '14px 0 0',
         fontWeight: 600
       }
-    }, "Secure payment via Stripe \xB7 Authorised by Fair Migration, Australia"))));
+    }, "Secure payment via Stripe"))));
   }
   function PageHead({
     eyebrow,
