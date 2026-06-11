@@ -55,6 +55,16 @@ output. If you edit a `.jsx` file, recompile with Babel (`@babel/preset-react` +
 
 ## Notes & next steps
 
-Map data, Stripe donation processing, and the email-capture integrations are
-stubbed/labelled, ready to be wired to real services. The wider brief also mentions an
-**MP Lookup**, a **Resources hub**, and an **About/FAQ** page — not yet built.
+The impact map runs on the supplied ABS Census + Australia Post/G-NAF dataset
+(`assets/postcodes.js`): 2,532 postcodes with locality names, state, centroid
+coordinates (used for the geographic "nearby" grid), overseas-born share,
+population growth (5-year and annualised), rental stress, median rent/income and
+three `/100` indices. Postcodes in the ABS *Excluded* list (suppressed or
+&lt;100 population) show why they aren't reportable; anything outside the dataset
+shows a clear no-data note.
+
+Caveat carried from the data: real net overseas migration isn't published at
+postcode level, so the migration layer uses **overseas-born share** as a proxy
+(labelled as such in the tool). Stripe donations and email capture are still
+stubbed. The wider brief also mentions an **MP Lookup**, a **Resources hub**, and
+an **About/FAQ** page — not yet built.

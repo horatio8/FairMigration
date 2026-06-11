@@ -7,17 +7,24 @@
     useEffect
   } = React;
   const D = window.POSTCODE_DATA || {};
+  const EXCL = window.POSTCODE_EXCLUDED || {};
   const PCS = Object.keys(D);
   const F = {
-    pop: 0,
-    ob: 1,
-    growth: 2,
-    rentInc: 3,
-    rent: 4,
-    income: 5,
-    migIdx: 6,
-    growthIdx: 7,
-    rentIdx: 8
+    loc: 0,
+    state: 1,
+    lat: 2,
+    lng: 3,
+    pop: 4,
+    ob: 5,
+    growth: 6,
+    ann: 7,
+    rentInc: 8,
+    rent: 9,
+    income: 10,
+    migIdx: 11,
+    growthIdx: 12,
+    rentIdx: 13,
+    allLoc: 14
   };
   const STOPS = [[0, [31, 122, 77]], [0.28, [127, 160, 60]], [0.5, [219, 158, 32]], [0.72, [200, 92, 38]], [1, [162, 1, 0]]];
   function heat(v) {
@@ -61,18 +68,7 @@
     rawUnit: '%',
     source: 'ABS Census 2021 — rent-to-income'
   }];
-  function stateOf(pc) {
-    const n = parseInt(pc, 10) || 0;
-    if (n >= 2600 && n <= 2618 || n >= 2900 && n <= 2920 || n >= 200 && n <= 299) return 'ACT';
-    if (n >= 1000 && n <= 2599 || n >= 2619 && n <= 2899 || n >= 2921 && n <= 2999) return 'NSW';
-    if (n >= 3000 && n <= 3999 || n >= 8000 && n <= 8999) return 'VIC';
-    if (n >= 4000 && n <= 4999 || n >= 9000 && n <= 9999) return 'QLD';
-    if (n >= 5000 && n <= 5999) return 'SA';
-    if (n >= 6000 && n <= 6999) return 'WA';
-    if (n >= 7000 && n <= 7999) return 'TAS';
-    if (n >= 800 && n <= 999) return 'NT';
-    return 'NSW';
-  }
+  const stateOf = pc => D[pc] ? D[pc][F.state] : null;
   const RANK = {};
   function ranksFor(field) {
     if (RANK[field]) return RANK[field];
@@ -94,7 +90,7 @@
     for (const p of PCS) {
       const v = D[p][field];
       if (v == null) continue;
-      const s = stateOf(p);
+      const s = D[p][F.state];
       sum[s] = (sum[s] || 0) + v;
       cnt[s] = (cnt[s] || 0) + 1;
     }
@@ -106,7 +102,7 @@
     let best = null,
       bv = -1;
     for (const p of PCS) {
-      if (stateOf(p) !== stateCode) continue;
+      if (D[p][F.state] !== stateCode) continue;
       const v = D[p][field];
       if (v != null && v > bv) {
         bv = v;
@@ -115,17 +111,23 @@
     }
     return best;
   }
-  function regionGrid(pc, field) {
-    const n = parseInt(pc, 10),
-      st = stateOf(pc);
-    let cand = PCS.filter(p => stateOf(p) === st && D[p][field] != null);
-    cand.sort((a, b) => Math.abs(parseInt(a, 10) - n) - Math.abs(parseInt(b, 10) - n));
-    let near = cand.slice(0, 25);
-    if (near.indexOf(pc) < 0 && D[pc]) {
-      near[near.length - 1] = pc;
-    }
-    near.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-    return near;
+  function nearbyGrid(pc) {
+    const a = D[pc];
+    if (!a || a[F.lat] == null) return [pc];
+    const la = a[F.lat],
+      lo = a[F.lng],
+      cosl = Math.cos(la * Math.PI / 180);
+    const arr = PCS.filter(p => D[p][F.lat] != null).map(p => {
+      const dx = (D[p][F.lng] - lo) * cosl,
+        dy = D[p][F.lat] - la;
+      return [p, dx * dx + dy * dy];
+    });
+    arr.sort((x, y) => x[1] - y[1]);
+    let near = arr.slice(0, 25).map(x => x[0]);
+    near.sort((x, y) => D[y][F.lat] - D[x][F.lat]);
+    const out = [];
+    for (let i = 0; i < near.length; i += 5) out.push(...near.slice(i, i + 5).sort((x, y) => D[x][F.lng] - D[y][F.lng]));
+    return out;
   }
   const STATES = [{
     code: 'WA',
@@ -235,8 +237,9 @@
       }
     }), React.createElement("span", null, "Higher"));
   }
-  function Yoy({
-    v
+  function Trend({
+    v,
+    label
   }) {
     if (v == null) return React.createElement("span", {
       style: {
@@ -252,7 +255,7 @@
         fontSize: '13px',
         whiteSpace: 'nowrap'
       }
-    }, up ? '▲' : '▼', " ", Math.abs(v).toFixed(1), "%");
+    }, up ? '▲' : '▼', " ", Math.abs(v).toFixed(up && label ? 2 : 1), "%", label ? ' ' + label : '');
   }
   function Row({
     label,
@@ -320,17 +323,21 @@
           alignItems: 'flex-end',
           minHeight: 0
         },
-        title: `${pc} — ${Math.round(v)} / 100`
+        title: `${D[pc][F.loc]} ${pc} — ${Math.round(v)} / 100`
       }, React.createElement("span", {
         style: {
           fontFamily: 'var(--font-sans)',
-          fontSize: '11px',
-          fontWeight: 800,
-          lineHeight: 1.1,
+          fontSize: '10.5px',
+          fontWeight: 700,
+          lineHeight: 1.05,
           color: '#fff',
-          textShadow: '0 1px 2px rgba(0,0,0,.5)'
+          textShadow: '0 1px 2px rgba(0,0,0,.55)',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
         }
-      }, pc), isCentre && React.createElement("span", {
+      }, D[pc][F.loc]), isCentre && React.createElement("span", {
         style: {
           position: 'absolute',
           top: 4,
@@ -353,6 +360,7 @@
     const ranks = ranksFor(layer.idx);
     const rank = ranks.map[pc];
     const rawVal = rec[layer.raw];
+    const allLoc = rec[F.allLoc];
     return React.createElement("div", {
       style: {
         display: 'flex',
@@ -367,22 +375,30 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, "Postcode"), React.createElement("div", {
+    }, "Your area"), React.createElement("div", {
       style: {
-        fontSize: '30px',
+        fontSize: '26px',
         fontWeight: 900,
         letterSpacing: '-0.02em',
         color: 'var(--ink-900)',
         marginTop: '2px',
-        lineHeight: 1.1
+        lineHeight: 1.12
       }
-    }, pc), React.createElement("div", {
+    }, rec[F.loc]), React.createElement("div", {
       style: {
         fontSize: '14px',
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, stateOf(pc), " \xB7 ", rec[F.pop] != null ? rec[F.pop].toLocaleString() + ' residents (2021)' : 'population n/a')), React.createElement("div", {
+    }, pc, " \xB7 ", rec[F.state], rec[F.pop] != null ? ' · ' + rec[F.pop].toLocaleString() + ' residents (2021)' : ''), allLoc && allLoc !== rec[F.loc] && React.createElement("div", {
+      style: {
+        fontSize: '12px',
+        color: 'var(--ink-400)',
+        fontWeight: 600,
+        marginTop: '4px',
+        lineHeight: 1.4
+      }
+    }, "Covers: ", allLoc)), React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -437,12 +453,12 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, "Growth 2016\u201321"), React.createElement("div", {
+    }, "Growth / yr"), React.createElement("div", {
       style: {
         marginTop: '6px'
       }
-    }, React.createElement(Yoy, {
-      v: rec[F.growth]
+    }, React.createElement(Trend, {
+      v: rec[F.ann]
     })))), React.createElement("div", {
       style: {
         display: 'flex',
@@ -452,6 +468,9 @@
     }, React.createElement(Row, {
       label: layer.rawLabel,
       value: rawVal == null ? 'n/a' : rawVal.toFixed(1) + layer.rawUnit
+    }), React.createElement(Row, {
+      label: "Population growth 2016\u201321",
+      value: rec[F.growth] == null ? 'n/a' : (rec[F.growth] >= 0 ? '+' : '') + rec[F.growth].toFixed(1) + '%'
     }), React.createElement(Row, {
       label: "Median weekly rent",
       value: rec[F.rent] == null ? 'n/a' : '$' + rec[F.rent].toLocaleString()
@@ -542,11 +561,11 @@
         lineHeight: 1.6,
         color: 'var(--ink-700)'
       }
-    }, "Postcode ", React.createElement("strong", {
+    }, React.createElement("strong", {
       style: {
         color: 'var(--ink-900)'
       }
-    }, pc), " sits", ' ', React.createElement("strong", {
+    }, rec[F.loc]), " sits", ' ', React.createElement("strong", {
       style: {
         color: heat((idxVal || 0) / 100)
       }
@@ -601,7 +620,7 @@
     const [sel, setSel] = useState(null);
     const [err, setErr] = useState('');
     const layer = LAYERS.find(l => l.id === layerId);
-    const cells = useMemo(() => pc && D[pc] ? regionGrid(pc, layer.idx) : [], [pc, layerId]);
+    const cells = useMemo(() => pc && D[pc] ? nearbyGrid(pc) : [], [pc]);
     const savg = useMemo(() => stateAvg(layer.idx), [layerId]);
     function go(code) {
       const v = String(code || '').trim();
@@ -610,14 +629,19 @@
         return;
       }
       const key = v.length === 3 ? '0' + v : v;
-      if (!D[key]) {
-        setErr('No ABS data for postcode ' + key + ' — try a nearby one');
+      if (D[key]) {
+        setErr('');
+        setPc(key);
+        setSel(key);
+        setMode('local');
         return;
       }
-      setErr('');
-      setPc(key);
-      setSel(key);
-      setMode('local');
+      if (EXCL[key]) {
+        const e = EXCL[key];
+        setErr(`${key}${e[1] ? ' (' + e[1] + ')' : ''} isn’t reportable — ${e[3]}`);
+        return;
+      }
+      setErr('No ABS data for postcode ' + key + ' — try a nearby one');
     }
     useEffect(() => {
       if (registerApi) registerApi({
@@ -704,7 +728,8 @@
         fontSize: '12px',
         fontWeight: 700,
         marginTop: '5px',
-        maxWidth: '230px'
+        maxWidth: '230px',
+        lineHeight: 1.4
       }
     }, err)), React.createElement("button", {
       type: "submit",
@@ -779,7 +804,7 @@
       style: {
         color: 'var(--red-500)'
       }
-    }, "your postcode.")), React.createElement("p", {
+    }, "your suburb.")), React.createElement("p", {
       style: {
         margin: '0 0 16px',
         fontSize: '15px',
@@ -835,12 +860,12 @@
         color: 'var(--ink-900)',
         whiteSpace: 'nowrap'
       }
-    }, stateOf(pc), " ", React.createElement("span", {
+    }, D[pc][F.loc], " ", React.createElement("span", {
       style: {
         color: 'var(--ink-400)',
         fontWeight: 700
       }
-    }, "\xB7 near ", pc)), React.createElement("div", {
+    }, "\xB7 ", pc)), React.createElement("div", {
       style: {
         fontSize: '12px',
         fontWeight: 700,
@@ -864,7 +889,7 @@
         color: 'var(--ink-400)',
         fontWeight: 600
       }
-    }, "\u2605 Your postcode. Tap any tile for its figures. Tiles are nearby postcodes in ", stateOf(pc), ". Real ABS Census 2021/2016 data (Postal Areas).")), React.createElement("div", {
+    }, "\u2605 Your postcode. Tap any tile for its figures. Tiles are the nearest suburbs/postcodes by location. Real ABS Census 2021/2016 data (Postal Areas).")), React.createElement("div", {
       style: {
         padding: '26px'
       }

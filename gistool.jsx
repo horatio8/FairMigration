@@ -1,17 +1,19 @@
 /* =====================================================================
-   Fair Migration — Postcode Impact Map (real ABS data)
+   Fair Migration — Postcode Impact Map (real ABS + place-name data)
    National state cartogram (data-driven averages) → drills into a local
-   grid of nearby postcodes. Figures come from window.POSTCODE_DATA
-   (ABS Census 2021/2016, Postal Areas). Exported to window.PostcodeTool.
+   grid of the geographically nearest postcodes. Figures from
+   window.POSTCODE_DATA (ABS Census 2021/2016 + Australia Post/G-NAF
+   localities & centroids). Exported to window.PostcodeTool.
    ===================================================================== */
 
 (function () {
   const { useState, useMemo, useEffect } = React;
 
   const D = window.POSTCODE_DATA || {};
+  const EXCL = window.POSTCODE_EXCLUDED || {};
   const PCS = Object.keys(D);
-  // row = [pop2021, ob%, growth%, rentInc%, rent$, income$, migIdx, growthIdx, rentIdx]
-  const F = { pop: 0, ob: 1, growth: 2, rentInc: 3, rent: 4, income: 5, migIdx: 6, growthIdx: 7, rentIdx: 8 };
+  // row = [loc, state, lat, lng, pop21, ob%, growth%, ann%, rentInc%, rent$, income$, migIdx, growthIdx, rentIdx, allLoc]
+  const F = { loc: 0, state: 1, lat: 2, lng: 3, pop: 4, ob: 5, growth: 6, ann: 7, rentInc: 8, rent: 9, income: 10, migIdx: 11, growthIdx: 12, rentIdx: 13, allLoc: 14 };
 
   /* ---------- heat colour scale (low green → amber → high red) ---------- */
   const STOPS = [
@@ -31,7 +33,6 @@
     return 'rgb(162,1,0)';
   }
 
-  /* ---------- data layers → ABS index columns ---------- */
   const LAYERS = [
     { id: 'mig', label: 'Migration intensity', short: 'Migration index', idx: F.migIdx,
       raw: F.ob, rawLabel: 'Overseas-born share', rawUnit: '%', source: 'ABS Census 2021 — overseas-born share (proxy)' },
@@ -41,19 +42,7 @@
       raw: F.rentInc, rawLabel: 'Rent-to-income', rawUnit: '%', source: 'ABS Census 2021 — rent-to-income' },
   ];
 
-  /* ---------- postcode → state ---------- */
-  function stateOf(pc) {
-    const n = parseInt(pc, 10) || 0;
-    if ((n >= 2600 && n <= 2618) || (n >= 2900 && n <= 2920) || (n >= 200 && n <= 299)) return 'ACT';
-    if ((n >= 1000 && n <= 2599) || (n >= 2619 && n <= 2899) || (n >= 2921 && n <= 2999)) return 'NSW';
-    if ((n >= 3000 && n <= 3999) || (n >= 8000 && n <= 8999)) return 'VIC';
-    if ((n >= 4000 && n <= 4999) || (n >= 9000 && n <= 9999)) return 'QLD';
-    if (n >= 5000 && n <= 5999) return 'SA';
-    if (n >= 6000 && n <= 6999) return 'WA';
-    if (n >= 7000 && n <= 7999) return 'TAS';
-    if (n >= 800 && n <= 999) return 'NT';
-    return 'NSW';
-  }
+  const stateOf = (pc) => (D[pc] ? D[pc][F.state] : null);
 
   /* ---------- precomputed national ranks per index column ---------- */
   const RANK = {};
@@ -69,25 +58,31 @@
   function stateAvg(field) {
     if (SAVG[field]) return SAVG[field];
     const sum = {}, cnt = {};
-    for (const p of PCS) { const v = D[p][field]; if (v == null) continue; const s = stateOf(p); sum[s] = (sum[s] || 0) + v; cnt[s] = (cnt[s] || 0) + 1; }
+    for (const p of PCS) { const v = D[p][field]; if (v == null) continue; const s = D[p][F.state]; sum[s] = (sum[s] || 0) + v; cnt[s] = (cnt[s] || 0) + 1; }
     const m = {}; for (const s in sum) m[s] = sum[s] / cnt[s];
     return (SAVG[field] = m);
   }
   function topPostcode(stateCode, field) {
     let best = null, bv = -1;
-    for (const p of PCS) { if (stateOf(p) !== stateCode) continue; const v = D[p][field]; if (v != null && v > bv) { bv = v; best = p; } }
+    for (const p of PCS) { if (D[p][F.state] !== stateCode) continue; const v = D[p][field]; if (v != null && v > bv) { bv = v; best = p; } }
     return best;
   }
 
-  /* ---------- nearby postcodes (same state, nearest by number) for the grid ---------- */
-  function regionGrid(pc, field) {
-    const n = parseInt(pc, 10), st = stateOf(pc);
-    let cand = PCS.filter((p) => stateOf(p) === st && D[p][field] != null);
-    cand.sort((a, b) => Math.abs(parseInt(a, 10) - n) - Math.abs(parseInt(b, 10) - n));
-    let near = cand.slice(0, 25);
-    if (near.indexOf(pc) < 0 && D[pc]) { near[near.length - 1] = pc; }
-    near.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-    return near;
+  /* ---------- geographically nearest postcodes, arranged north-up / west-left ---------- */
+  function nearbyGrid(pc) {
+    const a = D[pc];
+    if (!a || a[F.lat] == null) return [pc];
+    const la = a[F.lat], lo = a[F.lng], cosl = Math.cos(la * Math.PI / 180);
+    const arr = PCS.filter((p) => D[p][F.lat] != null).map((p) => {
+      const dx = (D[p][F.lng] - lo) * cosl, dy = D[p][F.lat] - la;
+      return [p, dx * dx + dy * dy];
+    });
+    arr.sort((x, y) => x[1] - y[1]);
+    let near = arr.slice(0, 25).map((x) => x[0]);
+    near.sort((x, y) => D[y][F.lat] - D[x][F.lat]); // north first
+    const out = [];
+    for (let i = 0; i < near.length; i += 5) out.push(...near.slice(i, i + 5).sort((x, y) => D[x][F.lng] - D[y][F.lng]));
+    return out;
   }
 
   const STATES = [
@@ -130,12 +125,12 @@
     );
   }
 
-  function Yoy({ v }) {
+  function Trend({ v, label }) {
     if (v == null) return <span style={{ color: 'var(--ink-400)', fontWeight: 700 }}>n/a</span>;
     const up = v >= 0;
     return (
       <span style={{ color: up ? 'var(--red-500)' : 'var(--color-success)', fontWeight: 800, fontSize: '13px', whiteSpace: 'nowrap' }}>
-        {up ? '▲' : '▼'} {Math.abs(v).toFixed(1)}%
+        {up ? '▲' : '▼'} {Math.abs(v).toFixed(up && label ? 2 : 1)}%{label ? ' ' + label : ''}
       </span>
     );
   }
@@ -163,8 +158,8 @@
                 outline: isCentre ? '3px solid #0d3b66' : 'none', outlineOffset: isCentre ? '-3px' : 0,
                 boxShadow: isSel ? '0 0 0 3px #fff, 0 0 0 5px #0d3b66' : 'none',
                 transition: 'box-shadow .12s ease', textAlign: 'left', display: 'flex', alignItems: 'flex-end', minHeight: 0,
-              }} title={`${pc} — ${Math.round(v)} / 100`}>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 800, lineHeight: 1.1, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.5)' }}>{pc}</span>
+              }} title={`${D[pc][F.loc]} ${pc} — ${Math.round(v)} / 100`}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 700, lineHeight: 1.05, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.55)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{D[pc][F.loc]}</span>
               {isCentre && <span style={{ position: 'absolute', top: 4, right: 5, fontSize: '11px' }} title="Your postcode">★</span>}
             </button>
           );
@@ -179,12 +174,18 @@
     const ranks = ranksFor(layer.idx);
     const rank = ranks.map[pc];
     const rawVal = rec[layer.raw];
+    const allLoc = rec[F.allLoc];
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
         <div>
-          <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>Postcode</div>
-          <div style={{ fontSize: '30px', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--ink-900)', marginTop: '2px', lineHeight: 1.1 }}>{pc}</div>
-          <div style={{ fontSize: '14px', color: 'var(--ink-500)', fontWeight: 600 }}>{stateOf(pc)} · {rec[F.pop] != null ? rec[F.pop].toLocaleString() + ' residents (2021)' : 'population n/a'}</div>
+          <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>Your area</div>
+          <div style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--ink-900)', marginTop: '2px', lineHeight: 1.12 }}>{rec[F.loc]}</div>
+          <div style={{ fontSize: '14px', color: 'var(--ink-500)', fontWeight: 600 }}>
+            {pc} · {rec[F.state]}{rec[F.pop] != null ? ' · ' + rec[F.pop].toLocaleString() + ' residents (2021)' : ''}
+          </div>
+          {allLoc && allLoc !== rec[F.loc] && (
+            <div style={{ fontSize: '12px', color: 'var(--ink-400)', fontWeight: 600, marginTop: '4px', lineHeight: 1.4 }}>Covers: {allLoc}</div>
+          )}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -196,13 +197,14 @@
             </div>
           </div>
           <div style={{ background: 'var(--mist-50)', border: '1px solid var(--line-200)', borderRadius: '8px', padding: '12px 14px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>Growth 2016–21</div>
-            <div style={{ marginTop: '6px' }}><Yoy v={rec[F.growth]} /></div>
+            <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>Growth / yr</div>
+            <div style={{ marginTop: '6px' }}><Trend v={rec[F.ann]} /></div>
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <Row label={layer.rawLabel} value={rawVal == null ? 'n/a' : rawVal.toFixed(1) + layer.rawUnit} />
+          <Row label="Population growth 2016–21" value={rec[F.growth] == null ? 'n/a' : (rec[F.growth] >= 0 ? '+' : '') + rec[F.growth].toFixed(1) + '%'} />
           <Row label="Median weekly rent" value={rec[F.rent] == null ? 'n/a' : '$' + rec[F.rent].toLocaleString()} />
           <Row label="Median weekly income" value={rec[F.income] == null ? 'n/a' : '$' + rec[F.income].toLocaleString()} />
           <Row label="National rank" value={rank ? '#' + rank.toLocaleString() + ' of ' + ranks.count.toLocaleString() : 'n/a'} />
@@ -234,7 +236,7 @@
 
         <div style={{ borderTop: '1px solid var(--line-200)', paddingTop: '16px' }}>
           <p style={{ margin: '0 0 12px', fontSize: '14px', lineHeight: 1.6, color: 'var(--ink-700)' }}>
-            Postcode <strong style={{ color: 'var(--ink-900)' }}>{pc}</strong> sits
+            <strong style={{ color: 'var(--ink-900)' }}>{rec[F.loc]}</strong> sits
             {' '}<strong style={{ color: heat((idxVal || 0) / 100) }}>{idxVal > 66 ? 'far above' : idxVal > 40 ? 'above' : 'near'}</strong>{' '}
             the national average on {layer.label.toLowerCase()}. This is the strain on <span style={{ fontWeight: 800 }}>YOUR</span> community.
           </p>
@@ -258,15 +260,16 @@
     const [err, setErr] = useState('');
 
     const layer = LAYERS.find((l) => l.id === layerId);
-    const cells = useMemo(() => (pc && D[pc] ? regionGrid(pc, layer.idx) : []), [pc, layerId]);
+    const cells = useMemo(() => (pc && D[pc] ? nearbyGrid(pc) : []), [pc]);
     const savg = useMemo(() => stateAvg(layer.idx), [layerId]);
 
     function go(code) {
       const v = String(code || '').trim();
       if (!/^\d{3,4}$/.test(v)) { setErr('Enter a valid postcode'); return; }
       const key = v.length === 3 ? '0' + v : v;
-      if (!D[key]) { setErr('No ABS data for postcode ' + key + ' — try a nearby one'); return; }
-      setErr(''); setPc(key); setSel(key); setMode('local');
+      if (D[key]) { setErr(''); setPc(key); setSel(key); setMode('local'); return; }
+      if (EXCL[key]) { const e = EXCL[key]; setErr(`${key}${e[1] ? ' (' + e[1] + ')' : ''} isn’t reportable — ${e[3]}`); return; }
+      setErr('No ABS data for postcode ' + key + ' — try a nearby one');
     }
 
     useEffect(() => {
@@ -288,7 +291,7 @@
             <div>
               <input value={entry} onChange={(e) => setEntry(e.target.value.replace(/\D/g, '').slice(0, 4))} inputMode="numeric" placeholder="Enter postcode"
                 style={{ width: '150px', fontFamily: 'var(--font-sans)', fontSize: '16px', fontWeight: 600, padding: '11px 14px', borderRadius: 'var(--radius-md)', border: '1px solid transparent', outline: 'none', boxShadow: 'var(--shadow-xs)' }} />
-              {err && <div style={{ color: 'var(--coral-400)', fontSize: '12px', fontWeight: 700, marginTop: '5px', maxWidth: '230px' }}>{err}</div>}
+              {err && <div style={{ color: 'var(--coral-400)', fontSize: '12px', fontWeight: 700, marginTop: '5px', maxWidth: '230px', lineHeight: 1.4 }}>{err}</div>}
             </div>
             <button type="submit" style={{ background: 'var(--red-500)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-md)', padding: '11px 18px', fontSize: '15px', fontWeight: 800, fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxShadow: 'var(--shadow-xs)' }}
               onMouseEnter={(e) => e.currentTarget.style.background = 'var(--red-600)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--red-500)'}>
@@ -307,7 +310,7 @@
             </div>
             <div style={{ padding: '28px 26px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <h3 style={{ margin: '0 0 12px', fontSize: '24px', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--ink-900)', lineHeight: 1.15 }}>
-                Migration isn't abstract. It's <span style={{ color: 'var(--red-500)' }}>your postcode.</span>
+                Migration isn't abstract. It's <span style={{ color: 'var(--red-500)' }}>your suburb.</span>
               </h3>
               <p style={{ margin: '0 0 16px', fontSize: '15px', lineHeight: 1.65, color: 'var(--ink-700)' }}>
                 Enter your postcode to see real ABS figures for <strong>your area</strong> — migration intensity,
@@ -327,14 +330,14 @@
             <div style={{ padding: '26px', borderRight: '1px solid var(--line-200)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink-900)', whiteSpace: 'nowrap' }}>
-                  {stateOf(pc)} <span style={{ color: 'var(--ink-400)', fontWeight: 700 }}>· near {pc}</span>
+                  {D[pc][F.loc]} <span style={{ color: 'var(--ink-400)', fontWeight: 700 }}>· {pc}</span>
                 </div>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-500)', textAlign: 'right' }}>{layer.label}</div>
               </div>
               <PostcodeGrid cells={cells} field={layer.idx} selected={active} centre={pc} onSelect={setSel} />
               <div style={{ marginTop: '16px' }}><Legend /></div>
               <p style={{ margin: '12px 0 0', fontSize: '12px', color: 'var(--ink-400)', fontWeight: 600 }}>
-                ★ Your postcode. Tap any tile for its figures. Tiles are nearby postcodes in {stateOf(pc)}. Real ABS Census 2021/2016 data (Postal Areas).
+                ★ Your postcode. Tap any tile for its figures. Tiles are the nearest suburbs/postcodes by location. Real ABS Census 2021/2016 data (Postal Areas).
               </p>
             </div>
             <div style={{ padding: '26px' }}>
