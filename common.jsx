@@ -23,6 +23,75 @@
     if (data && data.postcode) safeSet('fm_pc', clean4(data.postcode));
   }
 
+  /* ---------- config (override per-site by setting window.FM_CONFIG before this script) ---------- */
+  const CFG = Object.assign({
+    origin: 'https://fairmigration.vote',
+    petitionSlug: 'fair-migration',
+    stripePaymentLink: '',     // paste the Stripe Payment Link URL to enable real donations
+  }, window.FM_CONFIG || {});
+
+  /* ---------- attribution capture (sessionStorage) + share-click beacon ---------- */
+  const ATTR_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+    'fbclid', 'gclid', 'ttclid', 'li_fat_id', 'msclkid', 'twclid', 'sccid',
+    'ad_id', 'adset_id', 'campaign_id', 'placement', 'ref'];
+  function getAttr() { try { return JSON.parse(sessionStorage.getItem('ff_attr') || '{}'); } catch (e) { return {}; } }
+  function captureAttribution() {
+    try {
+      const url = new URL(window.location.href);
+      const store = getAttr();
+      let changed = false;
+      ATTR_KEYS.forEach((k) => { const v = url.searchParams.get(k); if (v && !store[k]) { store[k] = v; changed = true; } });
+      const fbp = (document.cookie.match(/(?:^|;\s*)_fbp=([^;]+)/) || [])[1];
+      if (fbp && !store.fbp) { store.fbp = fbp; changed = true; }
+      if (!store.landing_url) { store.landing_url = window.location.href; store.landing_referrer = document.referrer; store.landing_at = new Date().toISOString(); changed = true; }
+      if (changed) sessionStorage.setItem('ff_attr', JSON.stringify(store));
+      return store;
+    } catch (e) { return {}; }
+  }
+  function shareClickBeacon() {
+    const a = getAttr(); const ref = a.ref;
+    if (!ref) return;
+    const key = 'ff_ref_click_fired_' + ref;
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
+    try {
+      fetch('/api/share-click', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref, source_url: window.location.href, fbclid: a.fbclid }), keepalive: true });
+    } catch (e) {}
+  }
+
+  /* ---------- shared petition submit: POST to the first-party API, then UI ---------- */
+  async function signPetition(data) {
+    try { localStorage.setItem('ff_last_petition_url', window.location.href); } catch (e) {}
+    const a = getAttr();
+    const body = Object.assign({}, data, {
+      fbclid: a.fbclid, fbp: a.fbp, ref: a.ref,
+      utm_source: a.utm_source, utm_medium: a.utm_medium, utm_campaign: a.utm_campaign,
+      utm_term: a.utm_term, utm_content: a.utm_content,
+      content_name: document.title, source_url: window.location.href, landing_url: a.landing_url,
+      campaign: CFG.petitionSlug,
+    });
+    let result = null;
+    try {
+      const r = await fetch('/api/petition-signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) result = await r.json();
+    } catch (e) {}
+    if (result && result.success) {
+      try {
+        localStorage.setItem('ff_referral_code', result.referral_code);
+        localStorage.setItem('ff_contact_id', result.contact_id);
+        if (data.firstName) localStorage.setItem('ff_first_name', data.firstName);
+      } catch (e) {}
+      if (window.fbq) { try { window.fbq('track', 'Lead', { content_name: body.content_name }, { eventID: result.meta_event_id }); } catch (e) {} }
+    }
+    return result;
+  }
+
+  /* ---------- Stripe: tag a donate URL with the petition slug at click time ---------- */
+  function appendClientRef(url, slug) {
+    if (!url || !slug) return url;
+    try { const u = new URL(url); u.searchParams.set('client_reference_id', String(slug)); return u.toString(); } catch (e) { return url; }
+  }
+
   /* live, drifting signature count (shared starting point across pages) */
   function useLiveCount() {
     const [count, setCount] = useState(48217 + (safeGet('fm_signed') === '1' ? 1 : 0));
@@ -178,12 +247,13 @@
   function PetitionForm({ onSign, cta = 'Sign the petition' }) {
     const [d, setD] = useState({ firstName: '', lastName: '', email: '', mobile: '', postcode: '' });
     const [err, setErr] = useState({});
+    const [busy, setBusy] = useState(false);
     const set = (k) => (e) => {
       const v = e.target.value;
       setD((s) => ({ ...s, [k]: v }));
       if (err[k]) setErr((s) => ({ ...s, [k]: undefined }));
     };
-    const submit = (e) => {
+    const submit = async (e) => {
       e.preventDefault();
       const n = {};
       if (!d.firstName.trim()) n.firstName = 'Required';
@@ -192,7 +262,15 @@
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) n.email = 'Enter a valid email address';
       setErr(n);
       if (Object.keys(n).length) return;
-      onSign && onSign(d);
+      // POST to the first-party API (mapped to API field names); UI proceeds even if it fails.
+      setBusy(true);
+      let result = null;
+      try {
+        result = await signPetition({ first_name: d.firstName.trim(), last_name: d.lastName.trim(),
+          email: d.email.trim(), mobile: d.mobile.trim(), postcode: d.postcode.trim(), firstName: d.firstName.trim() });
+      } catch (e2) {}
+      setBusy(false);
+      if (onSign) onSign(d, result);
     };
     return (
       <form className="pform" onSubmit={submit} noValidate>
@@ -208,7 +286,7 @@
           onChange={set('mobile')} autoComplete="tel" />
         <Input label="Postcode" name="postcode" placeholder="2000" value={d.postcode}
           onChange={set('postcode')} inputMode="numeric" maxLength={4} autoComplete="postal-code" />
-        <Button type="submit" variant="primary" size="lg" fullWidth>{cta}</Button>
+        <Button type="submit" variant="primary" size="lg" fullWidth disabled={busy}>{busy ? 'Signing…' : cta}</Button>
         <p className="pform-fine"><span className="req">*</span> Required. We'll send you campaign updates — unsubscribe anytime.</p>
       </form>
     );
@@ -225,6 +303,8 @@
           {pc ? ' We’ve pinned your local impact map — see what’s happening in your suburb.' : ''}
         </p>
         <Button variant="solid" fullWidth href={mapHref}>View my local impact →</Button>
+        <div style={{ height: '8px' }} />
+        <Button variant="primary" fullWidth href="share.html">Share with friends →</Button>
         <div style={{ height: '8px' }} />
         <Button variant="donate" fullWidth href="donate.html">Chip in to the campaign</Button>
       </Card>
@@ -321,6 +401,7 @@
     ];
     const [sel, setSel] = useState(1);
     const [recurring, setRecurring] = useState(false);
+    const donateHref = CFG.stripePaymentLink ? appendClientRef(CFG.stripePaymentLink, CFG.petitionSlug) : undefined;
     return (
       <section id="donate" className="section">
         <div className="container" style={{ maxWidth: '780px', textAlign: 'center' }}>
@@ -343,7 +424,7 @@
             Make it monthly — sustained pressure works
           </label>
           <div>
-            <Button variant="donate" size="lg">Donate {tiers[sel].amt}{recurring ? '/mo' : ''} securely</Button>
+            <Button variant="donate" size="lg" href={donateHref} target={donateHref ? '_top' : undefined}>Donate {tiers[sel].amt}{recurring ? '/mo' : ''} securely</Button>
             <p style={{ fontSize: '13px', color: 'var(--ink-400)', margin: '14px 0 0', fontWeight: 600 }}>Secure payment via Stripe</p>
           </div>
         </div>
@@ -397,8 +478,15 @@
   }
 
   window.FM = {
-    A, GOAL, fmt, pct, clean4, safeGet, safeSet, markSigned, useLiveCount,
+    A, GOAL, CFG, fmt, pct, clean4, safeGet, safeSet, markSigned, useLiveCount,
+    getAttr, captureAttribution, signPetition, appendClientRef,
     Eyebrow, Star, SiteNav, Hero, SignatureBar, Problem, PetitionForm, PetitionSection,
     MapStage, Demand, DonateBlock, PageHead, Footer,
   };
+
+  // Run once per page load (browser only): persist attribution + fire the ?ref= beacon.
+  if (typeof window !== 'undefined' && window.document) {
+    captureAttribution();
+    shareClickBeacon();
+  }
 })();

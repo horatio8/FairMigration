@@ -1,0 +1,7 @@
+{
+  "name": "fair-migration",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fair Migration campaign site + petition/donation/referral tracking API.",
+  "engines": { "node": ">=18" }
+}

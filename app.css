@@ -189,6 +189,24 @@ section[id] { scroll-margin-top: 116px; }
   background: var(--red-500); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
   text-transform: uppercase; padding: 4px 10px; border-radius: 999px; }
 
+/* ---------- /share page ---------- */
+.share-link { background: var(--mist-50); border: 1px solid var(--line-200); border-radius: var(--radius-md);
+  padding: 12px 14px; margin: 18px 0; overflow-x: auto; }
+.share-link code { font-size: 14px; font-weight: 600; color: var(--navy-700); white-space: nowrap; }
+.share-btns { display: flex; flex-direction: column; gap: 10px; max-width: 460px; }
+.share-btn { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 50px; border: none; border-radius: var(--radius-md); color: #fff; font-family: var(--font-sans);
+  font-size: 15px; font-weight: 800; letter-spacing: 0.01em; cursor: pointer;
+  box-shadow: var(--shadow-xs); transition: transform .05s ease, filter .15s ease; }
+.share-btn:hover { filter: brightness(1.06); }
+.share-btn:active { transform: translateY(1px); }
+.share-btn.is-used { box-shadow: 0 0 0 3px rgba(13,59,102,.25); }
+.share-tick { position: absolute; right: 14px; font-size: 15px; }
+.share-spinner { width: 28px; height: 28px; margin-top: 20px; border-radius: 50%;
+  border: 3px solid var(--line-200); border-top-color: var(--navy-700); animation: share-spin 0.8s linear infinite; }
+@keyframes share-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .share-spinner { animation: none; } }
+
 /* ---------- footer ---------- */
 .footer { border-top: 1px solid var(--line-200); padding: 48px 0 56px; background: var(--mist-50); }
 .footer a { text-decoration: none; }
