@@ -26,10 +26,12 @@ pasting credentials. Nothing below requires more code from us unless noted.
 
 ## What I need from you
 
-1. **Airtable** — a base with tables `Contacts`, `Events`, `Petition Signatures`,
-   `Donations` (fields per the spec). I can create this for you via the connected
-   Airtable integration if you point me at a workspace — otherwise create it and
-   send `AIRTABLE_BASE_ID` + a personal access token.
+1. **Airtable** — ✅ **Base created**: "Fair Migration — Tracking" (`app9pnP8DII9lzo2u`)
+   in the *All Client Database* workspace, with `Contacts`, `Events`,
+   `Petition Signatures`, `Donations` and all links/fields per the spec. You still
+   need to create a **personal access token** (scopes: `data.records:read`,
+   `data.records:write`, `schema.bases:read`) and set it as `AIRTABLE_API_KEY` in Vercel.
+   `AIRTABLE_BASE_ID` is already filled in `.env.example`.
 2. **Stripe** — `STRIPE_SECRET_KEY` (restricted: read Checkout Sessions, Customers,
    Invoices, Subscriptions), a webhook subscribed to `checkout.session.completed`
    and `invoice.paid` → `STRIPE_WEBHOOK_SECRET`, plus your Payment Link URL.
