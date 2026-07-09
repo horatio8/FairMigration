@@ -211,40 +211,63 @@
           <Row label="Data source" value={layer.source} muted />
         </div>
 
-        <div>
-          <div style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-500)', marginBottom: '8px' }}>Data layer</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {LAYERS.map((l) => {
-              const on = l.id === layer.id;
-              return (
-                <button key={l.id} onClick={() => setLayer(l.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'left', cursor: 'pointer',
-                    background: on ? 'var(--navy-50)' : 'var(--white)', border: '1px solid ' + (on ? 'var(--navy-700)' : 'var(--line-200)'),
-                    borderRadius: '6px', padding: '9px 12px', fontFamily: 'var(--font-sans)', transition: 'background .12s ease, border-color .12s ease',
-                  }}>
-                  <span style={{ width: '14px', height: '14px', borderRadius: '50%', flexShrink: 0, border: '2px solid ' + (on ? 'var(--navy-700)' : 'var(--line-300)'), background: on ? 'var(--navy-700)' : 'transparent', boxShadow: on ? 'inset 0 0 0 2px #fff' : 'none' }} />
-                  <span style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink-900)', lineHeight: 1.25 }}>{l.label}</span>
-                    <span style={{ fontSize: '12px', color: 'var(--ink-500)', fontWeight: 600, lineHeight: 1.2 }}>{l.source}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div style={{ borderTop: '1px solid var(--line-200)', paddingTop: '16px' }}>
-          <p style={{ margin: '0 0 12px', fontSize: '14px', lineHeight: 1.6, color: 'var(--ink-700)' }}>
+          <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: 'var(--ink-700)' }}>
             <strong style={{ color: 'var(--ink-900)' }}>{rec[F.loc]}</strong> sits
             {' '}<strong style={{ color: heat((idxVal || 0) / 100) }}>{idxVal > 66 ? 'far above' : idxVal > 40 ? 'above' : 'near'}</strong>{' '}
             the national average on {layer.label.toLowerCase()}. This is the strain on <span style={{ fontWeight: 800 }}>YOUR</span> community.
           </p>
-          <button onClick={onSign} style={{ width: '100%', background: 'var(--red-500)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-md)', padding: '14px 20px', fontSize: '16px', fontWeight: 800, fontFamily: 'var(--font-sans)', boxShadow: 'var(--shadow-xs)', transition: 'background .15s ease' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--red-600)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--red-500)'}>
-            Demand fair migration → Add your name
-          </button>
-          <button onClick={onBackNational} style={{ width: '100%', marginTop: '8px', background: 'transparent', color: 'var(--navy-700)', border: '1px solid var(--line-200)', cursor: 'pointer', borderRadius: 'var(--radius-md)', padding: '10px 20px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-sans)' }}>← Back to national map</button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------- three big data-layer toggle buttons (top of tool) ---------- */
+  function LayerBar({ layerId, setLayer }) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '16px 26px', borderBottom: '1px solid var(--line-200)', background: 'var(--mist-50)' }}>
+        {LAYERS.map((l) => {
+          const on = l.id === layerId;
+          return (
+            <button key={l.id} onClick={() => setLayer(l.id)}
+              style={{ cursor: 'pointer', textAlign: 'center', borderRadius: '10px', padding: '13px 8px', fontFamily: 'var(--font-sans)',
+                border: '2px solid ' + (on ? 'var(--navy-700)' : 'var(--line-200)'), background: on ? 'var(--navy-700)' : 'var(--white)',
+                color: on ? '#fff' : 'var(--ink-900)', transition: 'all .12s ease', boxShadow: on ? 'var(--shadow-sm)' : 'none' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '-0.01em' }}>{l.label}</div>
+              <div style={{ fontSize: '11px', fontWeight: 600, marginTop: '3px', color: on ? 'rgba(255,255,255,.75)' : 'var(--ink-500)' }}>{l.short}</div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ---------- suburb rankings (top by the selected layer) ---------- */
+  function Rankings({ field, layer, onPick, activePc }) {
+    const top = useMemo(() => PCS.filter((p) => D[p][field] != null).sort((a, b) => D[b][field] - D[a][field]).slice(0, 25), [field]);
+    return (
+      <div style={{ padding: '22px 26px' }}>
+        <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink-900)' }}>Australia's highest {layer.label.toLowerCase()} suburbs</div>
+        <div style={{ fontSize: '12px', color: 'var(--ink-500)', fontWeight: 600, margin: '2px 0 14px' }}>Ranked by {layer.short} · tap a row to open it on the map</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          {top.map((p, i) => {
+            const v = D[p][field];
+            return (
+              <button key={p} onClick={() => onPick(p)}
+                style={{ display: 'grid', gridTemplateColumns: '30px 1fr 56px 38px', alignItems: 'center', gap: '12px', textAlign: 'left', cursor: 'pointer',
+                  background: p === activePc ? 'var(--navy-50)' : 'var(--white)', border: '1px solid var(--line-200)', borderRadius: '8px', padding: '9px 12px', fontFamily: 'var(--font-sans)' }}>
+                <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--ink-400)' }}>{i + 1}</span>
+                <span style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink-900)' }}>{D[p][F.loc]}</span>{' '}
+                  <span style={{ fontSize: '12px', color: 'var(--ink-400)', fontWeight: 600 }}>{p} · {D[p][F.state]}</span>
+                </span>
+                <span style={{ height: '8px', borderRadius: '999px', background: 'var(--mist-100)', overflow: 'hidden' }}>
+                  <span style={{ display: 'block', height: '100%', width: Math.round(v) + '%', background: heat(v / 100) }} />
+                </span>
+                <span style={{ fontSize: '15px', fontWeight: 900, color: heat(v / 100), textAlign: 'right' }}>{Math.round(v)}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -253,6 +276,7 @@
   /* ---------- the whole tool ---------- */
   function PostcodeTool({ initialPostcode, onSign, registerApi }) {
     const [mode, setMode] = useState('national');
+    const [view, setView] = useState('map');
     const [pc, setPc] = useState(initialPostcode && D[initialPostcode] ? initialPostcode : '');
     const [entry, setEntry] = useState('');
     const [layerId, setLayerId] = useState('mig');
@@ -300,7 +324,22 @@
           </form>
         </div>
 
-        {mode === 'national' || !D[pc] ? (
+        <LayerBar layerId={layerId} setLayer={setLayerId} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 26px', borderBottom: '1px solid var(--line-200)' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-500)' }}>
+            {view === 'rank' ? 'Ranked suburbs' : (mode === 'local' && D[pc] ? D[pc][F.loc] + ' · ' + pc : 'Explore across Australia')}
+          </div>
+          <div style={{ display: 'inline-flex', background: 'var(--mist-100)', borderRadius: '999px', padding: '3px' }}>
+            {[['map', 'Map'], ['rank', 'Rankings']].map((it) => (
+              <button key={it[0]} onClick={() => setView(it[0])} style={{ border: 'none', cursor: 'pointer', borderRadius: '999px', padding: '6px 16px', fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 800, background: view === it[0] ? 'var(--navy-700)' : 'transparent', color: view === it[0] ? '#fff' : 'var(--ink-500)', transition: 'all .12s ease' }}>{it[1]}</button>
+            ))}
+          </div>
+        </div>
+
+        {view === 'rank' ? (
+          <Rankings field={layer.idx} layer={layer} activePc={active} onPick={(p) => { setEntry(p); go(p); setView('map'); }} />
+        ) : mode === 'national' || !D[pc] ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '0' }}>
             <div style={{ padding: '28px 26px', borderRight: '1px solid var(--line-200)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '8px', maxWidth: '380px', margin: '0 auto' }}>
@@ -346,6 +385,21 @@
             </div>
           </div>
         )}
+
+        <div style={{ padding: '18px 26px', borderTop: '1px solid var(--line-200)', background: 'var(--mist-50)', display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink-900)', maxWidth: '46ch' }}>
+            Migration is reshaping your community. <span style={{ color: 'var(--ink-500)', fontWeight: 600 }}>Demand a system that puts Australians first.</span>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+            {mode === 'local' && D[pc] && view === 'map' && (
+              <button onClick={() => { setMode('national'); setSel(null); }} style={{ background: 'transparent', color: 'var(--navy-700)', border: '1px solid var(--line-200)', cursor: 'pointer', borderRadius: 'var(--radius-md)', padding: '12px 18px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-sans)' }}>← National</button>
+            )}
+            <button onClick={onSign} style={{ background: 'var(--red-500)', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: 'var(--radius-md)', padding: '12px 22px', fontSize: '15px', fontWeight: 800, fontFamily: 'var(--font-sans)', boxShadow: 'var(--shadow-xs)', whiteSpace: 'nowrap', transition: 'background .15s ease' }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--red-600)'} onMouseLeave={(e) => e.currentTarget.style.background = 'var(--red-500)'}>
+              Demand fair migration → Add your name
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

@@ -2,6 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": { "api/**/*.js": { "maxDuration": 30 } },
   "rewrites": [
+    { "source": "/petition", "destination": "/petition.html" },
+    { "source": "/donate", "destination": "/donate.html" },
+    { "source": "/share", "destination": "/share.html" },
     { "source": "/fund", "destination": "/api/track-redirect?l=fund" },
     { "source": "/fight", "destination": "/api/track-redirect?l=fight" },
     { "source": "/leaderboard", "destination": "/api/leaderboard" }

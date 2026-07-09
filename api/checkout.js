@@ -12,21 +12,26 @@ const ORG = 'Fair Migration';
 function buildSessionForm({ amount, frequency, email, slug, ref, contact_id, sms_variant, utm, origin }) {
   const cents = Math.round(Number(amount) * 100);
   const monthly = frequency === 'monthly';
+  // One product ("FairMigration") on every transaction so they're trackable in Stripe.
   const price_data = {
     currency: 'aud',
-    product_data: { name: monthly ? 'Monthly donation to Fair Migration' : 'Donation to Fair Migration' },
+    product_data: { name: 'FairMigration', description: monthly ? 'FairMigration — monthly donation' : 'FairMigration — donation' },
     unit_amount: cents,
   };
   if (monthly) price_data.recurring = { interval: 'month' };
-  const metadata = { org: ORG, frequency: frequency || 'oneoff', content_name: 'Donation', source_url: origin };
+  const metadata = { org: ORG, frequency: frequency || 'oneoff', content_name: 'FairMigration', source_url: origin };
   if (ref) metadata.ref = ref;
   if (contact_id) metadata.contact_id = contact_id;
   if (sms_variant) metadata.sms_variant = sms_variant;
   for (const k in (utm || {})) if (utm[k]) metadata[k] = utm[k];
+  // one-off → post-payment monthly upsell on /donate; monthly is already recurring → straight to /share
+  const success_url = monthly
+    ? origin + '/share.html?session_id={CHECKOUT_SESSION_ID}'
+    : origin + '/donate.html?upsell={CHECKOUT_SESSION_ID}';
   const form = {
     mode: monthly ? 'subscription' : 'payment',
     line_items: [{ price_data, quantity: 1 }],
-    success_url: origin + '/share.html?session_id={CHECKOUT_SESSION_ID}',
+    success_url,
     cancel_url: origin + '/donate.html',
     metadata,
   };

@@ -17,7 +17,7 @@
     { id: 'copy', label: 'Copy link', bg: '#4B5563' },
   ];
 
-  function shareUrlFor(code) { return CFG.origin + '/petition.html?ref=' + encodeURIComponent(code); }
+  function shareUrlFor(code) { return CFG.origin + '/petition?ref=' + encodeURIComponent(code); }
   function shareText(count) {
     return 'I just signed the Fair Migration petition — ' + (count || '48,000+') +
       ' Australians are demanding our government put Australians first. Add your name:';

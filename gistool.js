@@ -484,79 +484,14 @@
       label: "Data source",
       value: layer.source,
       muted: true
-    })), React.createElement("div", null, React.createElement("div", {
-      style: {
-        fontSize: '12px',
-        fontWeight: 800,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        color: 'var(--ink-500)',
-        marginBottom: '8px'
-      }
-    }, "Data layer"), React.createElement("div", {
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px'
-      }
-    }, LAYERS.map(l => {
-      const on = l.id === layer.id;
-      return React.createElement("button", {
-        key: l.id,
-        onClick: () => setLayer(l.id),
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          textAlign: 'left',
-          cursor: 'pointer',
-          background: on ? 'var(--navy-50)' : 'var(--white)',
-          border: '1px solid ' + (on ? 'var(--navy-700)' : 'var(--line-200)'),
-          borderRadius: '6px',
-          padding: '9px 12px',
-          fontFamily: 'var(--font-sans)',
-          transition: 'background .12s ease, border-color .12s ease'
-        }
-      }, React.createElement("span", {
-        style: {
-          width: '14px',
-          height: '14px',
-          borderRadius: '50%',
-          flexShrink: 0,
-          border: '2px solid ' + (on ? 'var(--navy-700)' : 'var(--line-300)'),
-          background: on ? 'var(--navy-700)' : 'transparent',
-          boxShadow: on ? 'inset 0 0 0 2px #fff' : 'none'
-        }
-      }), React.createElement("span", {
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '2px',
-          minWidth: 0
-        }
-      }, React.createElement("span", {
-        style: {
-          fontSize: '14px',
-          fontWeight: 700,
-          color: 'var(--ink-900)',
-          lineHeight: 1.25
-        }
-      }, l.label), React.createElement("span", {
-        style: {
-          fontSize: '12px',
-          color: 'var(--ink-500)',
-          fontWeight: 600,
-          lineHeight: 1.2
-        }
-      }, l.source)));
-    }))), React.createElement("div", {
+    })), React.createElement("div", {
       style: {
         borderTop: '1px solid var(--line-200)',
         paddingTop: '16px'
       }
     }, React.createElement("p", {
       style: {
-        margin: '0 0 12px',
+        margin: 0,
         fontSize: '14px',
         lineHeight: 1.6,
         color: 'var(--ink-700)'
@@ -573,40 +508,148 @@
       style: {
         fontWeight: 800
       }
-    }, "YOUR"), " community."), React.createElement("button", {
-      onClick: onSign,
+    }, "YOUR"), " community.")));
+  }
+  function LayerBar({
+    layerId,
+    setLayer
+  }) {
+    return React.createElement("div", {
       style: {
-        width: '100%',
-        background: 'var(--red-500)',
-        color: '#fff',
-        border: 'none',
-        cursor: 'pointer',
-        borderRadius: 'var(--radius-md)',
-        padding: '14px 20px',
-        fontSize: '16px',
-        fontWeight: 800,
-        fontFamily: 'var(--font-sans)',
-        boxShadow: 'var(--shadow-xs)',
-        transition: 'background .15s ease'
-      },
-      onMouseEnter: e => e.currentTarget.style.background = 'var(--red-600)',
-      onMouseLeave: e => e.currentTarget.style.background = 'var(--red-500)'
-    }, "Demand fair migration \u2192 Add your name"), React.createElement("button", {
-      onClick: onBackNational,
-      style: {
-        width: '100%',
-        marginTop: '8px',
-        background: 'transparent',
-        color: 'var(--navy-700)',
-        border: '1px solid var(--line-200)',
-        cursor: 'pointer',
-        borderRadius: 'var(--radius-md)',
-        padding: '10px 20px',
-        fontSize: '14px',
-        fontWeight: 700,
-        fontFamily: 'var(--font-sans)'
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '10px',
+        padding: '16px 26px',
+        borderBottom: '1px solid var(--line-200)',
+        background: 'var(--mist-50)'
       }
-    }, "\u2190 Back to national map")));
+    }, LAYERS.map(l => {
+      const on = l.id === layerId;
+      return React.createElement("button", {
+        key: l.id,
+        onClick: () => setLayer(l.id),
+        style: {
+          cursor: 'pointer',
+          textAlign: 'center',
+          borderRadius: '10px',
+          padding: '13px 8px',
+          fontFamily: 'var(--font-sans)',
+          border: '2px solid ' + (on ? 'var(--navy-700)' : 'var(--line-200)'),
+          background: on ? 'var(--navy-700)' : 'var(--white)',
+          color: on ? '#fff' : 'var(--ink-900)',
+          transition: 'all .12s ease',
+          boxShadow: on ? 'var(--shadow-sm)' : 'none'
+        }
+      }, React.createElement("div", {
+        style: {
+          fontSize: '15px',
+          fontWeight: 800,
+          letterSpacing: '-0.01em'
+        }
+      }, l.label), React.createElement("div", {
+        style: {
+          fontSize: '11px',
+          fontWeight: 600,
+          marginTop: '3px',
+          color: on ? 'rgba(255,255,255,.75)' : 'var(--ink-500)'
+        }
+      }, l.short));
+    }));
+  }
+  function Rankings({
+    field,
+    layer,
+    onPick,
+    activePc
+  }) {
+    const top = useMemo(() => PCS.filter(p => D[p][field] != null).sort((a, b) => D[b][field] - D[a][field]).slice(0, 25), [field]);
+    return React.createElement("div", {
+      style: {
+        padding: '22px 26px'
+      }
+    }, React.createElement("div", {
+      style: {
+        fontSize: '15px',
+        fontWeight: 800,
+        color: 'var(--ink-900)'
+      }
+    }, "Australia's highest ", layer.label.toLowerCase(), " suburbs"), React.createElement("div", {
+      style: {
+        fontSize: '12px',
+        color: 'var(--ink-500)',
+        fontWeight: 600,
+        margin: '2px 0 14px'
+      }
+    }, "Ranked by ", layer.short, " \xB7 tap a row to open it on the map"), React.createElement("div", {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px'
+      }
+    }, top.map((p, i) => {
+      const v = D[p][field];
+      return React.createElement("button", {
+        key: p,
+        onClick: () => onPick(p),
+        style: {
+          display: 'grid',
+          gridTemplateColumns: '30px 1fr 56px 38px',
+          alignItems: 'center',
+          gap: '12px',
+          textAlign: 'left',
+          cursor: 'pointer',
+          background: p === activePc ? 'var(--navy-50)' : 'var(--white)',
+          border: '1px solid var(--line-200)',
+          borderRadius: '8px',
+          padding: '9px 12px',
+          fontFamily: 'var(--font-sans)'
+        }
+      }, React.createElement("span", {
+        style: {
+          fontSize: '14px',
+          fontWeight: 900,
+          color: 'var(--ink-400)'
+        }
+      }, i + 1), React.createElement("span", {
+        style: {
+          minWidth: 0,
+          overflow: 'hidden'
+        }
+      }, React.createElement("span", {
+        style: {
+          fontSize: '14px',
+          fontWeight: 700,
+          color: 'var(--ink-900)'
+        }
+      }, D[p][F.loc]), ' ', React.createElement("span", {
+        style: {
+          fontSize: '12px',
+          color: 'var(--ink-400)',
+          fontWeight: 600
+        }
+      }, p, " \xB7 ", D[p][F.state])), React.createElement("span", {
+        style: {
+          height: '8px',
+          borderRadius: '999px',
+          background: 'var(--mist-100)',
+          overflow: 'hidden'
+        }
+      }, React.createElement("span", {
+        style: {
+          display: 'block',
+          height: '100%',
+          width: Math.round(v) + '%',
+          background: heat(v / 100)
+        }
+      })), React.createElement("span", {
+        style: {
+          fontSize: '15px',
+          fontWeight: 900,
+          color: heat(v / 100),
+          textAlign: 'right'
+        }
+      }, Math.round(v)));
+    })));
   }
   function PostcodeTool({
     initialPostcode,
@@ -614,6 +657,7 @@
     registerApi
   }) {
     const [mode, setMode] = useState('national');
+    const [view, setView] = useState('map');
     const [pc, setPc] = useState(initialPostcode && D[initialPostcode] ? initialPostcode : '');
     const [entry, setEntry] = useState('');
     const [layerId, setLayerId] = useState('mig');
@@ -748,7 +792,55 @@
       },
       onMouseEnter: e => e.currentTarget.style.background = 'var(--red-600)',
       onMouseLeave: e => e.currentTarget.style.background = 'var(--red-500)'
-    }, mode === 'national' ? 'View my area' : 'Update'))), mode === 'national' || !D[pc] ? React.createElement("div", {
+    }, mode === 'national' ? 'View my area' : 'Update'))), React.createElement(LayerBar, {
+      layerId: layerId,
+      setLayer: setLayerId
+    }), React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 26px',
+        borderBottom: '1px solid var(--line-200)'
+      }
+    }, React.createElement("div", {
+      style: {
+        fontSize: '12px',
+        fontWeight: 700,
+        color: 'var(--ink-500)'
+      }
+    }, view === 'rank' ? 'Ranked suburbs' : mode === 'local' && D[pc] ? D[pc][F.loc] + ' · ' + pc : 'Explore across Australia'), React.createElement("div", {
+      style: {
+        display: 'inline-flex',
+        background: 'var(--mist-100)',
+        borderRadius: '999px',
+        padding: '3px'
+      }
+    }, [['map', 'Map'], ['rank', 'Rankings']].map(it => React.createElement("button", {
+      key: it[0],
+      onClick: () => setView(it[0]),
+      style: {
+        border: 'none',
+        cursor: 'pointer',
+        borderRadius: '999px',
+        padding: '6px 16px',
+        fontFamily: 'var(--font-sans)',
+        fontSize: '13px',
+        fontWeight: 800,
+        background: view === it[0] ? 'var(--navy-700)' : 'transparent',
+        color: view === it[0] ? '#fff' : 'var(--ink-500)',
+        transition: 'all .12s ease'
+      }
+    }, it[1])))), view === 'rank' ? React.createElement(Rankings, {
+      field: layer.idx,
+      layer: layer,
+      activePc: active,
+      onPick: p => {
+        setEntry(p);
+        go(p);
+        setView('map');
+      }
+    }) : mode === 'national' || !D[pc] ? React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1.1fr 0.9fr',
@@ -902,7 +994,70 @@
         setSel(null);
       },
       onSign: onSign
-    }))));
+    }))), React.createElement("div", {
+      style: {
+        padding: '18px 26px',
+        borderTop: '1px solid var(--line-200)',
+        background: 'var(--mist-50)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '14px',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }
+    }, React.createElement("div", {
+      style: {
+        fontSize: '14px',
+        fontWeight: 700,
+        color: 'var(--ink-900)',
+        maxWidth: '46ch'
+      }
+    }, "Migration is reshaping your community. ", React.createElement("span", {
+      style: {
+        color: 'var(--ink-500)',
+        fontWeight: 600
+      }
+    }, "Demand a system that puts Australians first.")), React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: '10px',
+        flexShrink: 0
+      }
+    }, mode === 'local' && D[pc] && view === 'map' && React.createElement("button", {
+      onClick: () => {
+        setMode('national');
+        setSel(null);
+      },
+      style: {
+        background: 'transparent',
+        color: 'var(--navy-700)',
+        border: '1px solid var(--line-200)',
+        cursor: 'pointer',
+        borderRadius: 'var(--radius-md)',
+        padding: '12px 18px',
+        fontSize: '14px',
+        fontWeight: 700,
+        fontFamily: 'var(--font-sans)'
+      }
+    }, "\u2190 National"), React.createElement("button", {
+      onClick: onSign,
+      style: {
+        background: 'var(--red-500)',
+        color: '#fff',
+        border: 'none',
+        cursor: 'pointer',
+        borderRadius: 'var(--radius-md)',
+        padding: '12px 22px',
+        fontSize: '15px',
+        fontWeight: 800,
+        fontFamily: 'var(--font-sans)',
+        boxShadow: 'var(--shadow-xs)',
+        whiteSpace: 'nowrap',
+        transition: 'background .15s ease'
+      },
+      onMouseEnter: e => e.currentTarget.style.background = 'var(--red-600)',
+      onMouseLeave: e => e.currentTarget.style.background = 'var(--red-500)'
+    }, "Demand fair migration \u2192 Add your name"))));
   }
   window.PostcodeTool = PostcodeTool;
 })();

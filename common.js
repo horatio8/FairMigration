@@ -345,10 +345,10 @@
       y2: "17"
     })))), React.createElement("nav", {
       className: 'site-nav-links' + (open ? ' is-open' : '')
-    }, link('problem', 'problem.html', 'The problem'), link('map', 'map.html', 'Impact map'), React.createElement("a", {
+    }, link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'map.html', "Your suburb's migration"), React.createElement("a", {
       className: "btn-sign",
       href: "petition.html"
-    }, "Sign"), React.createElement(Button, {
+    }, "Sign the petition \u203A"), React.createElement(Button, {
       variant: "donate",
       size: "sm",
       href: "donate.html"
@@ -363,11 +363,15 @@
       className: "hero-left"
     }, React.createElement("div", {
       className: "hero-inner"
+    }, React.createElement("div", {
+      className: "hero-text"
     }, React.createElement(Eyebrow, {
       variant: "light"
     }, "A campaign for everyday Australians"), React.createElement("h1", {
       className: "display"
     }, "Australians don't have to live like this."), React.createElement("p", {
+      className: "hero-redline"
+    }, "Put Australians first."), React.createElement("p", {
       className: "hero-lead"
     }, "Australia's migration system has reached a critical tipping point \u2014 and it's ", React.createElement("span", {
       className: "caps"
@@ -385,7 +389,7 @@
       variant: "solid",
       size: "lg",
       href: "map.html"
-    }, "See your suburb \u2192")))));
+    }, "See your suburb \u2192"))))));
   }
   function SignatureBar({
     count
@@ -457,6 +461,11 @@
       stat: 'Gridlock',
       h: 'Infrastructure',
       p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.'
+    }, {
+      idx: '04',
+      stat: 'Uncapped',
+      h: 'Disability (NDIS)',
+      p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.'
     }];
     return React.createElement("section", {
       id: "problem",
@@ -465,7 +474,7 @@
       className: "container container--wide"
     }, !bare && React.createElement("div", {
       className: "section-head"
-    }, React.createElement(Eyebrow, null, "The problem"), React.createElement("h2", {
+    }, React.createElement(Eyebrow, null, "Our migration problem"), React.createElement("h2", {
       className: "h2-display"
     }, "For years, our leaders drove radical migration intakes. ", React.createElement("span", {
       style: {
@@ -475,7 +484,7 @@
       className: "lead-p"
     }, "Our Government ", React.createElement("span", {
       className: "caps"
-    }, "MUST"), " put Australians first. The strain shows up in three places \u2014 and you feel all three.")), React.createElement("div", {
+    }, "MUST"), " put Australians first. Mass migration lands hardest on the things you rely on \u2014 ", React.createElement("strong", null, "housing, healthcare, infrastructure"), ", and now ", React.createElement("strong", null, "disability support"), ".")), React.createElement("div", {
       className: "pressures"
     }, items.map(it => React.createElement("div", {
       className: "pressure",
@@ -678,33 +687,31 @@
     }, React.createElement("div", {
       className: "container"
     }, React.createElement("div", {
-      className: "section-head"
+      className: "section-head",
+      style: {
+        margin: '0 auto',
+        textAlign: 'center'
+      }
+    }, React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'center'
+      }
     }, React.createElement(Eyebrow, {
       variant: "navy"
-    }, "Add your name"), React.createElement("h2", {
+    }, "Add your name")), React.createElement("h2", {
       className: "h2-display"
-    }, "Sign the petition. Then see what it's doing to ", React.createElement("span", {
-      style: {
-        color: 'var(--red-500)'
-      }
-    }, "your"), " suburb.")), React.createElement("div", {
+    }, "Sign the petition")), React.createElement("div", {
       className: "petition-grid"
-    }, React.createElement("div", null, React.createElement("p", {
-      className: "body-p",
-      style: {
-        fontSize: '17px',
-        marginTop: '4px'
-      }
-    }, "We are calling for an immediate overhaul of Australia's migration policies \u2014 so that migration is done in ", React.createElement("span", {
+    }, React.createElement("div", null, React.createElement("blockquote", {
+      className: "petition-quote"
+    }, React.createElement("p", {
+      className: "petition-quote-lead"
+    }, "We call for an immediate overhaul of Australia's migration policies so that it works in ", React.createElement("span", {
       className: "caps"
-    }, "OUR"), " best interests. Here's what you're demanding:"), React.createElement("ul", {
-      className: "demand-list"
-    }, ['An immediate reduction in the migration intake.', 'A full review of broken, unsustainable migration policy.', 'A system run in the interests of Australians first.'].map(t => React.createElement("li", {
-      key: t
-    }, React.createElement(Star, {
-      size: 18,
-      className: "star"
-    }), t)))), React.createElement("div", {
+    }, "OUR"), " best interests:"), React.createElement("ol", {
+      className: "petition-demands"
+    }, React.createElement("li", null, "An immediate reduction in the migration intake."), React.createElement("li", null, "A full review of broken, unsustainable migration policy."), React.createElement("li", null, "A system run in the interests of Australians first.")))), React.createElement("div", {
       style: {
         position: 'sticky',
         top: '120px'
@@ -786,96 +793,152 @@
       href: "petition.html"
     }, "Add your name"))));
   }
+  const DONATE_AMOUNTS = [35, 65, 135, 265, 550, 1500];
+  function suggestedMonthly(oneoff) {
+    return Math.max(5, Math.round(oneoff * 0.2 / 5) * 5);
+  }
   function DonateBlock() {
-    const tiers = [{
-      amt: '$25',
-      note: 'Reach 500 more voters'
-    }, {
-      amt: '$50',
-      note: 'Fund a day of digital ads',
-      featured: true
-    }, {
-      amt: '$100',
-      note: 'Power our research desk'
-    }];
-    const [sel, setSel] = useState(1);
-    const [recurring, setRecurring] = useState(false);
-    const donateHref = CFG.stripePaymentLink ? appendClientRef(CFG.stripePaymentLink, CFG.petitionSlug) : undefined;
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const upsell = params.get('upsell') || params.get('cs');
+    if (upsell) return React.createElement(MonthlyUpsell, {
+      sessionId: upsell
+    });
+    const [freq, setFreq] = useState('oneoff');
+    const [sel, setSel] = useState(65);
+    const [other, setOther] = useState(false);
+    const [custom, setCustom] = useState('');
+    const [busy, setBusy] = useState(false);
+    const go = amount => {
+      if (amount >= 2 && !busy) {
+        setBusy(true);
+        donateCheckout({
+          amount,
+          frequency: freq
+        });
+      }
+    };
     return React.createElement("section", {
       id: "donate",
-      className: "section"
+      className: "donate-hero"
+    }, React.createElement("div", {
+      className: "container container--wide donate-grid"
+    }, React.createElement("div", {
+      className: "donate-msg"
+    }, React.createElement(Eyebrow, {
+      variant: "light"
+    }, "Donate"), React.createElement("h1", {
+      className: "donate-head"
+    }, "They have ", React.createElement("span", {
+      className: "donate-billions"
+    }, "BILLION$"), ". We need you."), React.createElement("p", {
+      className: "donate-copy"
+    }, "Fair Migration is funded by Australians \u2014 not corporations, not the big party machines. Every dollar puts the case for fair migration in front of more voters: ads, research, and organising on the ground."), React.createElement("p", {
+      className: "donate-trust"
+    }, "Stripe-secured \xB7 All amounts in AUD \xB7 Not tax-deductible")), React.createElement("div", {
+      className: "donate-card"
+    }, React.createElement("div", {
+      className: "donate-toggle",
+      role: "tablist"
+    }, React.createElement("button", {
+      role: "tab",
+      "aria-selected": freq === 'oneoff',
+      className: freq === 'oneoff' ? 'is-on' : '',
+      onClick: () => setFreq('oneoff')
+    }, "One-off"), React.createElement("button", {
+      role: "tab",
+      "aria-selected": freq === 'monthly',
+      className: freq === 'monthly' ? 'is-on' : '',
+      onClick: () => setFreq('monthly')
+    }, "Monthly")), React.createElement("div", {
+      className: "donate-amts"
+    }, DONATE_AMOUNTS.map(a => React.createElement("button", {
+      key: a,
+      className: 'donate-amt' + (!other && sel === a ? ' is-on' : ''),
+      disabled: busy,
+      onClick: () => {
+        setOther(false);
+        setSel(a);
+        go(a);
+      }
+    }, "$", a, freq === 'monthly' ? React.createElement("span", {
+      className: "donate-per"
+    }, "/mo") : null)), React.createElement("button", {
+      className: 'donate-amt donate-amt--other' + (other ? ' is-on' : ''),
+      onClick: () => setOther(true)
+    }, "Other")), other && React.createElement("div", {
+      className: "donate-custom"
+    }, React.createElement("span", {
+      className: "donate-custom-sign"
+    }, "$"), React.createElement("input", {
+      type: "number",
+      min: "2",
+      inputMode: "numeric",
+      placeholder: "Amount",
+      value: custom,
+      onChange: e => setCustom(e.target.value),
+      onKeyDown: e => {
+        if (e.key === 'Enter') go(Number(custom));
+      }
+    }), React.createElement(Button, {
+      variant: "donate",
+      onClick: () => go(Number(custom)),
+      disabled: busy
+    }, "Give", freq === 'monthly' ? ' monthly' : '', " \u2192")), React.createElement("p", {
+      className: "donate-cardnote"
+    }, busy ? 'Taking you to secure checkout…' : 'Stripe-secured · All amounts in AUD · Not tax-deductible.'))));
+  }
+  function MonthlyUpsell({
+    sessionId
+  }) {
+    const [amt, setAmt] = useState(null);
+    const [busy, setBusy] = useState(false);
+    useEffect(() => {
+      let live = true;
+      fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : null).then(j => {
+        if (live && j && j.session) setAmt(Math.round((j.session.amount_total || 0) / 100));
+      }).catch(() => {});
+      return () => {
+        live = false;
+      };
+    }, []);
+    const monthly = amt ? suggestedMonthly(amt) : 10;
+    const upgrade = () => {
+      if (busy) return;
+      setBusy(true);
+      donateCheckout({
+        amount: monthly,
+        frequency: 'monthly'
+      });
+    };
+    return React.createElement("section", {
+      className: "upsell"
     }, React.createElement("div", {
       className: "container",
       style: {
-        maxWidth: '780px',
-        textAlign: 'center'
+        maxWidth: '720px'
       }
-    }, React.createElement("div", {
-      style: {
-        display: 'flex',
-        justifyContent: 'center'
-      }
-    }, React.createElement(Eyebrow, {
-      variant: "navy"
-    }, "Chip in")), React.createElement("h2", {
-      className: "h2-display",
-      style: {
-        marginTop: '16px'
-      }
-    }, "This campaign runs on Australians like you."), React.createElement("p", {
-      className: "body-p",
-      style: {
-        fontSize: '17px',
-        margin: '18px auto 0',
-        maxWidth: '56ch'
-      }
-    }, "We take no money from government or big party machines. Every dollar puts the case for fair migration in front of more voters."), React.createElement("div", {
-      className: "tier-grid"
-    }, tiers.map((t, i) => React.createElement("button", {
-      key: t.amt,
-      onClick: () => setSel(i),
-      className: 'tier' + (sel === i ? ' tier-on' : '')
-    }, t.featured && React.createElement("span", {
-      className: "tier-tag"
-    }, "Most chosen"), React.createElement("span", {
-      className: "tier-amt"
-    }, t.amt), React.createElement("span", {
-      className: "tier-note"
-    }, t.note)))), React.createElement("label", {
-      style: {
-        display: 'inline-flex',
-        gap: '10px',
-        alignItems: 'center',
-        margin: '24px 0',
-        fontSize: '15px',
-        fontWeight: 600,
-        color: 'var(--ink-700)',
-        cursor: 'pointer'
-      }
-    }, React.createElement("input", {
-      type: "checkbox",
-      checked: recurring,
-      onChange: e => setRecurring(e.target.checked),
-      style: {
-        width: '18px',
-        height: '18px',
-        accentColor: 'var(--navy-700)'
-      }
-    }), "Make it monthly \u2014 sustained pressure works"), React.createElement("div", null, React.createElement(Button, {
+    }, React.createElement("p", {
+      className: "upsell-thanks"
+    }, "Thank you", amt ? ' — $' + amt + ' received' : '', ". Your receipt is on its way."), React.createElement("h1", {
+      className: "upsell-head"
+    }, amt ? '$' + amt + ' helps today.' : 'Thank you.', " ", React.createElement("span", {
+      className: "upsell-red"
+    }, "$", monthly, " a month keeps the pressure on.")), React.createElement("p", {
+      className: "upsell-sub"
+    }, "One-off gifts keep the lights on. Monthly backing changes what we can do:"), React.createElement("ul", {
+      className: "upsell-list"
+    }, React.createElement("li", null, React.createElement("b", null, "We can plan ahead."), " Ads, research and polling are booked months out \u2014 steady funding lets us commit before the Government moves."), React.createElement("li", null, React.createElement("b", null, "They can't wait us out."), " A predictable, reliable base is the one thing a delay-and-outlast strategy can't beat."), React.createElement("li", null, React.createElement("b", null, "Small monthly beats big once."), " A year of $", monthly, "/month puts more pressure on Canberra than most one-off gifts \u2014 without you feeling it.")), React.createElement(Button, {
       variant: "donate",
       size: "lg",
-      onClick: () => donateCheckout({
-        amount: Number(tiers[sel].amt.replace(/[^0-9.]/g, '')),
-        frequency: recurring ? 'monthly' : 'oneoff'
-      })
-    }, "Donate ", tiers[sel].amt, recurring ? '/mo' : '', " securely"), React.createElement("p", {
-      style: {
-        fontSize: '13px',
-        color: 'var(--ink-400)',
-        margin: '14px 0 0',
-        fontWeight: 600
-      }
-    }, "Secure payment via Stripe"))));
+      fullWidth: true,
+      onClick: upgrade,
+      disabled: busy
+    }, busy ? 'One moment…' : 'Make it $' + monthly + '/month'), React.createElement("p", {
+      className: "upsell-fine"
+    }, "Cancel anytime with one email. Receipted monthly."), React.createElement("a", {
+      className: "upsell-skip",
+      href: "share.html"
+    }, "No thanks \u2014 I'll share the petition with my mates instead \u2192")));
   }
   function PageHead({
     eyebrow,
@@ -981,7 +1044,10 @@
     }, React.createElement("span", {
       className: "ff-sp-icon",
       "aria-hidden": "true"
-    }, isPet ? '★' : '♥'), React.createElement("span", {
+    }, isPet ? React.createElement(Star, {
+      size: 16,
+      color: "#fff"
+    }) : '♥'), React.createElement("span", {
       className: "ff-sp-body"
     }, React.createElement("span", {
       className: "ff-sp-text"

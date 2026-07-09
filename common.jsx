@@ -181,9 +181,9 @@
             </svg>
           </button>
           <nav className={'site-nav-links' + (open ? ' is-open' : '')}>
-            {link('problem', 'problem.html', 'The problem')}
-            {link('map', 'map.html', 'Impact map')}
-            <a className="btn-sign" href="petition.html">Sign</a>
+            {link('problem', 'problem.html', 'Our Migration Problem')}
+            {link('map', 'map.html', "Your suburb's migration")}
+            <a className="btn-sign" href="petition.html">Sign the petition ›</a>
             <Button variant="donate" size="sm" href="donate.html">Donate</Button>
           </nav>
         </header>
@@ -197,15 +197,18 @@
       <section className="hero">
         <div className="hero-left">
           <div className="hero-inner">
-            <Eyebrow variant="light">A campaign for everyday Australians</Eyebrow>
-            <h1 className="display">Australians don't have to live like this.</h1>
-            <p className="hero-lead">
-              Australia's migration system has reached a critical tipping point — and it's <span className="caps">your</span> rent,
-              <span className="caps"> your</span> hospital queue and <span className="caps"> your</span> commute paying the price.
-            </p>
-            <div className="hero-cta">
-              <Button variant="primary" size="lg" href="petition.html">Sign the petition</Button>
-              <Button variant="solid" size="lg" href="map.html">See your suburb →</Button>
+            <div className="hero-text">
+              <Eyebrow variant="light">A campaign for everyday Australians</Eyebrow>
+              <h1 className="display">Australians don't have to live like this.</h1>
+              <p className="hero-redline">Put Australians first.</p>
+              <p className="hero-lead">
+                Australia's migration system has reached a critical tipping point — and it's <span className="caps">your</span> rent,
+                <span className="caps"> your</span> hospital queue and <span className="caps"> your</span> commute paying the price.
+              </p>
+              <div className="hero-cta">
+                <Button variant="primary" size="lg" href="petition.html">Sign the petition</Button>
+                <Button variant="solid" size="lg" href="map.html">See your suburb →</Button>
+              </div>
             </div>
           </div>
         </div>
@@ -251,15 +254,16 @@
       { idx: '01', stat: '+39%', h: 'Housing', p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.' },
       { idx: '02', stat: 'Strained', h: 'Healthcare', p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.' },
       { idx: '03', stat: 'Gridlock', h: 'Infrastructure', p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.' },
+      { idx: '04', stat: 'Uncapped', h: 'Disability (NDIS)', p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.' },
     ];
     return (
       <section id="problem" className="section">
         <div className="container container--wide">
           {!bare && (
             <div className="section-head">
-              <Eyebrow>The problem</Eyebrow>
+              <Eyebrow>Our migration problem</Eyebrow>
               <h2 className="h2-display">For years, our leaders drove radical migration intakes. <span style={{ color: 'var(--red-500)' }}>Everyday Australians were left to suffer.</span></h2>
-              <p className="lead-p">Our Government <span className="caps">MUST</span> put Australians first. The strain shows up in three places — and you feel all three.</p>
+              <p className="lead-p">Our Government <span className="caps">MUST</span> put Australians first. Mass migration lands hardest on the things you rely on — <strong>housing, healthcare, infrastructure</strong>, and now <strong>disability support</strong>.</p>
             </div>
           )}
           <div className="pressures">
@@ -352,24 +356,20 @@
     return (
       <section id="petition" className="section section--tint">
         <div className="container">
-          <div className="section-head">
-            <Eyebrow variant="navy">Add your name</Eyebrow>
-            <h2 className="h2-display">Sign the petition. Then see what it's doing to <span style={{ color: 'var(--red-500)' }}>your</span> suburb.</h2>
+          <div className="section-head" style={{ margin: '0 auto', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}><Eyebrow variant="navy">Add your name</Eyebrow></div>
+            <h2 className="h2-display">Sign the petition</h2>
           </div>
           <div className="petition-grid">
             <div>
-              <p className="body-p" style={{ fontSize: '17px', marginTop: '4px' }}>
-                We are calling for an immediate overhaul of Australia's migration policies — so that migration is done in <span className="caps">OUR</span> best interests. Here's what you're demanding:
-              </p>
-              <ul className="demand-list">
-                {[
-                  'An immediate reduction in the migration intake.',
-                  'A full review of broken, unsustainable migration policy.',
-                  'A system run in the interests of Australians first.',
-                ].map((t) => (
-                  <li key={t}><Star size={18} className="star" />{t}</li>
-                ))}
-              </ul>
+              <blockquote className="petition-quote">
+                <p className="petition-quote-lead">We call for an immediate overhaul of Australia's migration policies so that it works in <span className="caps">OUR</span> best interests:</p>
+                <ol className="petition-demands">
+                  <li>An immediate reduction in the migration intake.</li>
+                  <li>A full review of broken, unsustainable migration policy.</li>
+                  <li>A system run in the interests of Australians first.</li>
+                </ol>
+              </blockquote>
             </div>
             <div style={{ position: 'sticky', top: '120px' }}>
               <div className="goal-block">
@@ -428,41 +428,88 @@
     );
   }
 
-  /* ---------------- Donate ---------------- */
+  /* ---------------- Donate: split layout + amount grid ---------------- */
+  const DONATE_AMOUNTS = [35, 65, 135, 265, 550, 1500];
+  function suggestedMonthly(oneoff) { return Math.max(5, Math.round((oneoff * 0.2) / 5) * 5); }
+
   function DonateBlock() {
-    const tiers = [
-      { amt: '$25', note: 'Reach 500 more voters' },
-      { amt: '$50', note: 'Fund a day of digital ads', featured: true },
-      { amt: '$100', note: 'Power our research desk' },
-    ];
-    const [sel, setSel] = useState(1);
-    const [recurring, setRecurring] = useState(false);
-    const donateHref = CFG.stripePaymentLink ? appendClientRef(CFG.stripePaymentLink, CFG.petitionSlug) : undefined;
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const upsell = params.get('upsell') || params.get('cs');
+    if (upsell) return <MonthlyUpsell sessionId={upsell} />;
+
+    const [freq, setFreq] = useState('oneoff');
+    const [sel, setSel] = useState(65);
+    const [other, setOther] = useState(false);
+    const [custom, setCustom] = useState('');
+    const [busy, setBusy] = useState(false);
+    const go = (amount) => { if (amount >= 2 && !busy) { setBusy(true); donateCheckout({ amount, frequency: freq }); } };
+
     return (
-      <section id="donate" className="section">
-        <div className="container" style={{ maxWidth: '780px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center' }}><Eyebrow variant="navy">Chip in</Eyebrow></div>
-          <h2 className="h2-display" style={{ marginTop: '16px' }}>This campaign runs on Australians like you.</h2>
-          <p className="body-p" style={{ fontSize: '17px', margin: '18px auto 0', maxWidth: '56ch' }}>
-            We take no money from government or big party machines. Every dollar puts the case for fair migration in front of more voters.
-          </p>
-          <div className="tier-grid">
-            {tiers.map((t, i) => (
-              <button key={t.amt} onClick={() => setSel(i)} className={'tier' + (sel === i ? ' tier-on' : '')}>
-                {t.featured && <span className="tier-tag">Most chosen</span>}
-                <span className="tier-amt">{t.amt}</span>
-                <span className="tier-note">{t.note}</span>
-              </button>
-            ))}
+      <section id="donate" className="donate-hero">
+        <div className="container container--wide donate-grid">
+          <div className="donate-msg">
+            <Eyebrow variant="light">Donate</Eyebrow>
+            <h1 className="donate-head">They have <span className="donate-billions">BILLION$</span>. We need you.</h1>
+            <p className="donate-copy">
+              Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar
+              puts the case for fair migration in front of more voters: ads, research, and organising on the ground.
+            </p>
+            <p className="donate-trust">Stripe-secured · All amounts in AUD · Not tax-deductible</p>
           </div>
-          <label style={{ display: 'inline-flex', gap: '10px', alignItems: 'center', margin: '24px 0', fontSize: '15px', fontWeight: 600, color: 'var(--ink-700)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: 'var(--navy-700)' }} />
-            Make it monthly — sustained pressure works
-          </label>
-          <div>
-            <Button variant="donate" size="lg" onClick={() => donateCheckout({ amount: Number(tiers[sel].amt.replace(/[^0-9.]/g, '')), frequency: recurring ? 'monthly' : 'oneoff' })}>Donate {tiers[sel].amt}{recurring ? '/mo' : ''} securely</Button>
-            <p style={{ fontSize: '13px', color: 'var(--ink-400)', margin: '14px 0 0', fontWeight: 600 }}>Secure payment via Stripe</p>
+
+          <div className="donate-card">
+            <div className="donate-toggle" role="tablist">
+              <button role="tab" aria-selected={freq === 'oneoff'} className={freq === 'oneoff' ? 'is-on' : ''} onClick={() => setFreq('oneoff')}>One-off</button>
+              <button role="tab" aria-selected={freq === 'monthly'} className={freq === 'monthly' ? 'is-on' : ''} onClick={() => setFreq('monthly')}>Monthly</button>
+            </div>
+            <div className="donate-amts">
+              {DONATE_AMOUNTS.map((a) => (
+                <button key={a} className={'donate-amt' + (!other && sel === a ? ' is-on' : '')} disabled={busy}
+                  onClick={() => { setOther(false); setSel(a); go(a); }}>${a}{freq === 'monthly' ? <span className="donate-per">/mo</span> : null}</button>
+              ))}
+              <button className={'donate-amt donate-amt--other' + (other ? ' is-on' : '')} onClick={() => setOther(true)}>Other</button>
+            </div>
+            {other && (
+              <div className="donate-custom">
+                <span className="donate-custom-sign">$</span>
+                <input type="number" min="2" inputMode="numeric" placeholder="Amount" value={custom}
+                  onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(Number(custom)); }} />
+                <Button variant="donate" onClick={() => go(Number(custom))} disabled={busy}>Give{freq === 'monthly' ? ' monthly' : ''} →</Button>
+              </div>
+            )}
+            <p className="donate-cardnote">{busy ? 'Taking you to secure checkout…' : 'Stripe-secured · All amounts in AUD · Not tax-deductible.'}</p>
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  /* ---------------- Post-donation monthly upsell ---------------- */
+  function MonthlyUpsell({ sessionId }) {
+    const [amt, setAmt] = useState(null);
+    const [busy, setBusy] = useState(false);
+    useEffect(() => {
+      let live = true;
+      fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then((r) => (r.ok ? r.json() : null))
+        .then((j) => { if (live && j && j.session) setAmt(Math.round((j.session.amount_total || 0) / 100)); }).catch(() => {});
+      return () => { live = false; };
+    }, []);
+    const monthly = amt ? suggestedMonthly(amt) : 10;
+    const upgrade = () => { if (busy) return; setBusy(true); donateCheckout({ amount: monthly, frequency: 'monthly' }); };
+    return (
+      <section className="upsell">
+        <div className="container" style={{ maxWidth: '720px' }}>
+          <p className="upsell-thanks">Thank you{amt ? ' — $' + amt + ' received' : ''}. Your receipt is on its way.</p>
+          <h1 className="upsell-head">{amt ? '$' + amt + ' helps today.' : 'Thank you.'} <span className="upsell-red">${monthly} a month keeps the pressure on.</span></h1>
+          <p className="upsell-sub">One-off gifts keep the lights on. Monthly backing changes what we can do:</p>
+          <ul className="upsell-list">
+            <li><b>We can plan ahead.</b> Ads, research and polling are booked months out — steady funding lets us commit before the Government moves.</li>
+            <li><b>They can't wait us out.</b> A predictable, reliable base is the one thing a delay-and-outlast strategy can't beat.</li>
+            <li><b>Small monthly beats big once.</b> A year of ${monthly}/month puts more pressure on Canberra than most one-off gifts — without you feeling it.</li>
+          </ul>
+          <Button variant="donate" size="lg" fullWidth onClick={upgrade} disabled={busy}>{busy ? 'One moment…' : 'Make it $' + monthly + '/month'}</Button>
+          <p className="upsell-fine">Cancel anytime with one email. Receipted monthly.</p>
+          <a className="upsell-skip" href="share.html">No thanks — I'll share the petition with my mates instead →</a>
         </div>
       </section>
     );
@@ -530,7 +577,7 @@
     const dismiss = (e) => { e.preventDefault(); e.stopPropagation(); setPhase('out'); timers.current.unmount = setTimeout(() => setItem(null), 360); };
     return (
       <a className={'ff-sp ff-sp--' + item.kind + ' ff-sp--' + phase} href={item.href} aria-label={text}>
-        <span className="ff-sp-icon" aria-hidden="true">{isPet ? '★' : '♥'}</span>
+        <span className="ff-sp-icon" aria-hidden="true">{isPet ? <Star size={16} color="#fff" /> : '♥'}</span>
         <span className="ff-sp-body">
           <span className="ff-sp-text">{text}</span>
           <span className="ff-sp-cta">{cta} →</span>
