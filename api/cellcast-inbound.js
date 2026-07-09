@@ -32,9 +32,16 @@ module.exports = async (req, res) => {
 
     await OPS.upsertReply(reply_id, { phone, message, received_at, raw: JSON.stringify(b).slice(0, 9000), matched_contact_id });
 
-    if (/^\s*stop\b/i.test(message)) {
+    // Opt-out: an inbound STOP reply, or a dedicated Cellcast opt-out callback (which
+    // may carry no message body). Detect both so Receiver + Opt-Out can share this URL.
+    const flag = (v) => v === true || v === 'true' || v === 1 || v === '1';
+    const kind = String(b.type || b.event || b.status || b.action || '');
+    const isOptOut = /^\s*(stop|unsub|unsubscribe|opt[\s-]?out|cancel|end|quit)\b/i.test(message)
+      || flag(b.optOut) || flag(b.opt_out) || flag(b.optout) || flag(b.unsubscribe) || flag(b.unsubscribed)
+      || /opt[\s-]?out|unsubscrib/i.test(kind);
+    if (isOptOut) {
       if (contact) { try { await AT.updateRecord(AT.T.contacts, contact.id, { sms_opt_out: true }); } catch (e) {} }
-      await AT.logEvent({ event_type: 'SMS Opt Out', contactId: contact ? contact.id : undefined, payload: { phone, message }, source_channel: 'Referral' });
+      await AT.logEvent({ event_type: 'SMS Opt Out', contactId: contact ? contact.id : undefined, payload: { phone, message, kind }, source_channel: 'Referral' });
     }
 
     if (process.env.CELLCAST_FORWARD_URL) {
