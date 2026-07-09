@@ -59,6 +59,28 @@
       return [];
     }
   }
+  function firePixelPurchase(sessionId) {
+    if (!window.fbq || !sessionId) return;
+    const key = 'ff_pixel_purchase_' + sessionId;
+    try {
+      if (sessionStorage.getItem(key)) return;
+    } catch (e) {}
+    fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : null).then(j => {
+      const s = j && j.session;
+      if (!s || !s.paid) return;
+      try {
+        sessionStorage.setItem(key, '1');
+      } catch (e) {}
+      try {
+        window.fbq('track', 'Purchase', {
+          value: (s.amount_total || 0) / 100,
+          currency: (s.currency || 'aud').toUpperCase()
+        }, {
+          eventID: 'stripe_' + sessionId
+        });
+      } catch (e) {}
+    }).catch(() => {});
+  }
   function ShareButtons({
     code,
     count
@@ -254,6 +276,7 @@
       const emailParam = params.get('email');
       const localCode = safeGet('ff_referral_code');
       if (sessionId) {
+        firePixelPurchase(sessionId);
         setState('polling');
         const tick = () => {
           pollRef.current += 1;
