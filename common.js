@@ -135,6 +135,7 @@
         localStorage.setItem('ff_referral_code', result.referral_code);
         localStorage.setItem('ff_contact_id', result.contact_id);
         if (data.firstName) localStorage.setItem('ff_first_name', data.firstName);
+        if (data.email) localStorage.setItem('ff_email', data.email);
       } catch (e) {}
       if (window.fbq) {
         try {
@@ -161,10 +162,75 @@
   function useLiveCount() {
     const [count, setCount] = useState(48217 + (safeGet('fm_signed') === '1' ? 1 : 0));
     useEffect(() => {
+      let live = true;
+      fetch('/api/signature-count').then(r => r.ok ? r.json() : null).then(j => {
+        if (live && j && j.count) setCount(j.count);
+      }).catch(() => {});
       const id = setInterval(() => setCount(c => c + (Math.random() < 0.6 ? 1 : 0)), 4200);
-      return () => clearInterval(id);
+      return () => {
+        live = false;
+        clearInterval(id);
+      };
     }, []);
     return [count, setCount];
+  }
+  async function donateCheckout({
+    amount,
+    frequency
+  }) {
+    const a = getAttr();
+    const uc = a.utm_content;
+    const sms_variant = uc === 'ben' ? 'A' : uc === 'issue' ? 'B' : undefined;
+    const body = {
+      amount,
+      frequency,
+      email: safeGet('ff_email') || undefined,
+      slug: CFG.petitionSlug,
+      ref: a.ref || safeGet('ff_referral_code') || undefined,
+      contact_id: safeGet('ff_contact_id') || undefined,
+      sms_variant,
+      utm_source: a.utm_source,
+      utm_medium: a.utm_medium,
+      utm_campaign: a.utm_campaign,
+      utm_term: a.utm_term,
+      utm_content: a.utm_content
+    };
+    try {
+      const r = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      const j = await r.json();
+      if (j && j.url) {
+        window.location.href = j.url;
+        return;
+      }
+    } catch (e) {}
+    if (CFG.stripePaymentLink) {
+      window.location.href = appendClientRef(CFG.stripePaymentLink, CFG.petitionSlug);
+    } else {
+      window.alert('Donations are being connected — please check back shortly.');
+    }
+  }
+  let _partialFired = false;
+  function firePartial(form, data) {
+    if (_partialFired) return;
+    _partialFired = true;
+    try {
+      fetch('/api/partial', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(Object.assign({
+          form
+        }, data)),
+        keepalive: true
+      });
+    } catch (e) {}
   }
   function Eyebrow({
     children,
@@ -504,7 +570,16 @@
       onChange: set('email'),
       invalid: !!err.email,
       hint: err.email,
-      autoComplete: "email"
+      autoComplete: "email",
+      onBlur: () => {
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) firePartial('petition', {
+          email: d.email.trim(),
+          first_name: d.firstName.trim(),
+          last_name: d.lastName.trim(),
+          mobile: d.mobile.trim(),
+          postcode: d.postcode.trim()
+        });
+      }
     }), React.createElement(Input, {
       label: "Mobile phone",
       type: "tel",
@@ -782,8 +857,10 @@
     }), "Make it monthly \u2014 sustained pressure works"), React.createElement("div", null, React.createElement(Button, {
       variant: "donate",
       size: "lg",
-      href: donateHref,
-      target: donateHref ? '_top' : undefined
+      onClick: () => donateCheckout({
+        amount: Number(tiers[sel].amt.replace(/[^0-9.]/g, '')),
+        frequency: recurring ? 'monthly' : 'oneoff'
+      })
     }, "Donate ", tiers[sel].amt, recurring ? '/mo' : '', " securely"), React.createElement("p", {
       style: {
         fontSize: '13px',

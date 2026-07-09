@@ -1,15 +1,18 @@
 /* Stripe helpers — manual HMAC signature verification (never trust the SDK in
-   serverless cold starts) and minimal REST reads. No SDK dependency. */
+   serverless cold starts) and minimal REST. No SDK dependency.
+   Supports a per-account key override so the Rally flow can use a separate account. */
 
 const https = require('https');
 const crypto = require('crypto');
+const { toFormBody } = require('./_util');
 
 const SECRET = process.env.STRIPE_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
 // Verify a Stripe-Signature header against the raw body. 5-minute skew tolerance.
-function verifySignature(rawBody, sigHeader) {
-  if (!WEBHOOK_SECRET || !sigHeader) return false;
+function verifySignature(rawBody, sigHeader, secretOverride) {
+  const secret = secretOverride || WEBHOOK_SECRET;
+  if (!secret || !sigHeader) return false;
   const parts = {};
   String(sigHeader).split(',').forEach((kv) => {
     const i = kv.indexOf('=');
@@ -22,17 +25,20 @@ function verifySignature(rawBody, sigHeader) {
   if (!t || !sigs.length) return false;
   if (Math.abs(Math.floor(Date.now() / 1000) - Number(t)) > 300) return false;
   const payload = t + '.' + (Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody);
-  const expected = crypto.createHmac('sha256', WEBHOOK_SECRET).update(payload, 'utf8').digest('hex');
+  const expected = crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
   const eBuf = Buffer.from(expected);
   return sigs.some((s) => { const sBuf = Buffer.from(s); return sBuf.length === eBuf.length && crypto.timingSafeEqual(sBuf, eBuf); });
 }
 
-function stripeGet(path) {
+function request(method, path, { key, form } = {}) {
   return new Promise((resolve, reject) => {
-    if (!SECRET) { reject(new Error('STRIPE_SECRET_KEY not set')); return; }
+    const secret = key || SECRET;
+    if (!secret) { reject(new Error('Stripe secret key not set')); return; }
+    const data = form ? toFormBody(form) : null;
     const req = https.request({
-      hostname: 'api.stripe.com', path: '/v1/' + path, method: 'GET',
-      headers: { Authorization: 'Bearer ' + SECRET },
+      hostname: 'api.stripe.com', path: '/v1/' + path, method,
+      headers: Object.assign({ Authorization: 'Bearer ' + secret },
+        data ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) } : {}),
     }, (res) => {
       const chunks = []; res.on('data', (c) => chunks.push(c));
       res.on('end', () => {
@@ -41,8 +47,13 @@ function stripeGet(path) {
         else reject(new Error('Stripe ' + res.statusCode + ': ' + (j.error && j.error.message)));
       });
     });
-    req.on('error', reject); req.end();
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
   });
 }
 
-module.exports = { verifySignature, stripeGet };
+const stripeGet = (path, key) => request('GET', path, { key });
+const stripePost = (path, form, key) => request('POST', path, { form, key });
+
+module.exports = { verifySignature, stripeGet, stripePost };

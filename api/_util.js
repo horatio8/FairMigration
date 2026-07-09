@@ -62,4 +62,65 @@ function clientIp(req) {
 
 const PRODUCTION_ORIGIN = process.env.PRODUCTION_ORIGIN || 'https://fairmigration.vote';
 
-module.exports = { applyCors, send, readJson, readRaw, clientIp, PRODUCTION_ORIGIN };
+const crypto = require('crypto');
+function safeEqual(a, b) {
+  const ab = Buffer.from(String(a)), bb = Buffer.from(String(b));
+  return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
+}
+
+// Vercel cron sends Authorization: Bearer <CRON_SECRET>. Crons run in production only.
+function requireCron(req, res) {
+  const secret = process.env.CRON_SECRET;
+  const hdr = req.headers.authorization || '';
+  const ok = secret && hdr === 'Bearer ' + secret;
+  // allow ?key= for manual/callable crons
+  const url = new URL(req.url, 'http://x');
+  const keyOk = secret && url.searchParams.get('key') === secret;
+  if (!ok && !keyOk) { send(res, 401, { error: 'unauthorized' }); return false; }
+  return true;
+}
+
+// Basic-auth gate against ADMIN_BASIC_AUTH="user:pass".
+function requireBasicAuth(req, res) {
+  const expected = process.env.ADMIN_BASIC_AUTH;
+  const hdr = req.headers.authorization || '';
+  if (expected && hdr.startsWith('Basic ')) {
+    const decoded = Buffer.from(hdr.slice(6), 'base64').toString('utf8');
+    if (safeEqual(decoded, expected)) return true;
+  }
+  res.statusCode = 401;
+  res.setHeader('WWW-Authenticate', 'Basic realm="Admin"');
+  res.end('Authentication required');
+  return false;
+}
+
+// Flatten an object into x-www-form-urlencoded with Stripe bracket notation.
+function toFormBody(obj, prefix) {
+  const parts = [];
+  for (const key in obj) {
+    const val = obj[key];
+    if (val === undefined || val === null) continue;
+    const k = prefix ? prefix + '[' + key + ']' : key;
+    if (typeof val === 'object' && !Array.isArray(val)) parts.push(toFormBody(val, k));
+    else if (Array.isArray(val)) val.forEach((v, i) => {
+      if (typeof v === 'object') parts.push(toFormBody(v, k + '[' + i + ']'));
+      else parts.push(encodeURIComponent(k + '[' + i + ']') + '=' + encodeURIComponent(v));
+    });
+    else parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(val));
+  }
+  return parts.filter(Boolean).join('&');
+}
+
+function sendHtml(res, code, html) {
+  res.statusCode = code;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.end(html);
+}
+function redirect(res, code, location) {
+  res.statusCode = code;
+  res.setHeader('Location', location);
+  res.end();
+}
+
+module.exports = { applyCors, send, sendHtml, redirect, readJson, readRaw, clientIp, safeEqual,
+  requireCron, requireBasicAuth, toFormBody, PRODUCTION_ORIGIN };

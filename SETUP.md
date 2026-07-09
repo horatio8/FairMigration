@@ -1,64 +1,78 @@
-# Tracking system — setup & go-live
+# Campaign platform — setup & go-live
 
-Petition → Donation → Referral tracking, per the spec. Stack: **Vercel** (static
-site + serverless `/api`) · **Airtable** (data) · **Stripe** (payments) ·
-**Meta Conversions API** (attribution).
+Static site + dependency-free Vercel serverless pipeline: petitions → donations →
+referral loop, plus abandoned-cart recovery, A/B SMS, email flows, a signature
+counter, reporting, Meta Lead Ads, and rally ticketing. Implements the Farmers
+Fightback build spec on the Fair Migration site.
 
-The **code is complete**. What remains is provisioning external accounts and
-pasting credentials. Nothing below requires more code from us unless noted.
+The **code is complete and self-contained** (Node built-ins only — no `npm install`).
+Every integration is gated by env vars: unset = feature disabled, nothing crashes.
 
-## What's built
+## Airtable — ✅ done
 
-**Serverless API (`/api`, zero npm deps — Node built-ins only)**
-- `petition-signup.js` — match-or-create, referral attribution, `Petition Signed` event → `Petition Signatures`, Meta `Lead`.
-- `stripe-webhook.js` — manual HMAC verify on raw body, idempotent `Donation` event → `Donations`, Meta `Purchase`. Skips subscription checkout (handled by `invoice.paid`).
-- `share-signup.js`, `share-context.js`, `share-issued.js`, `share-click.js` — referral loop.
-- `event-log.js` — generic capture.
-- Shared: `_airtable.js` (identity ladder, referral codes, fan-out), `_meta.js` (CAPI + SHA-256), `_stripe.js` (HMAC + REST), `_util.js` (CORS/body).
+Base **"Fair Migration — Tracking"** (`app9pnP8DII9lzo2u`, *All Client Database*
+workspace) has all tables + fields:
 
-**Frontend (wired in `common.js` / `share.js`)**
-- Attribution capture (UTMs, `fbclid`, `_fbp`, `ref`, landing) → `sessionStorage`.
-- `?ref=` Share Click beacon (once per ref per session).
-- Petition form → `POST /api/petition-signup`, persists `ff_referral_code` / `ff_contact_id`, fires browser Pixel `Lead` with the shared `event_id`. Falls back gracefully (UI still flips) if the API is unreachable.
-- Donate CTA appends `?client_reference_id=<slug>` when a Stripe Payment Link is configured.
-- `/share` page — polling / ask-identity / ready states + 6 share buttons.
-- OG tags (absolute, 2340×866) on every public page.
+- Core: `Contacts` (+ `sms_opt_out`), `Events`, `Petition Signatures` (+ `lead_source`), `Donations`
+- Operational: `Lapse Queue`, `SMS Sends`, `SMS Replies`, `Referral Rollup`, `AB Daily`, `Site Stats`, `Rally Tickets`, `Rally Comp Tokens`
 
-## What I need from you
+You still create an Airtable **PAT** (`AIRTABLE_API_KEY`); the base id is in `.env.example`.
 
-1. **Airtable** — ✅ **Base created**: "Fair Migration — Tracking" (`app9pnP8DII9lzo2u`)
-   in the *All Client Database* workspace, with `Contacts`, `Events`,
-   `Petition Signatures`, `Donations` and all links/fields per the spec. You still
-   need to create a **personal access token** (scopes: `data.records:read`,
-   `data.records:write`, `schema.bases:read`) and set it as `AIRTABLE_API_KEY` in Vercel.
-   `AIRTABLE_BASE_ID` is already filled in `.env.example`.
-2. **Stripe** — `STRIPE_SECRET_KEY` (restricted: read Checkout Sessions, Customers,
-   Invoices, Subscriptions), a webhook subscribed to `checkout.session.completed`
-   and `invoice.paid` → `STRIPE_WEBHOOK_SECRET`, plus your Payment Link URL.
-3. **Meta** (optional but recommended) — `META_PIXEL_ID`, `META_CAPI_TOKEN`.
-4. **Vercel** — connect this repo as a project; add the env vars (Production +
-   Preview); deploy. Confirm the production domain (assumed `fairmigration.vote`).
+> Native Meta Lead Ads only (optional phase 10): before enabling `/api/meta-lead-webhook`,
+> add these 13 text columns to `Petition Signatures` — `meta_leadgen_id`, `meta_form_id`,
+> `meta_form_name`, `meta_ad_id`, `meta_ad_name`, `meta_adset_id`, `meta_adset_name`,
+> `meta_campaign_id`, `meta_campaign_name`, `meta_page_id`, `meta_platform`,
+> `meta_partner_name`, `meta_created_time`. (The Zapier path via `/api/event-log` needs none of these.)
 
-Set everything from `.env.example`. **Redeploy after adding env vars.**
+## API surface (`/api`)
 
-## Dashboard steps (you, in each console)
+- **Capture:** `petition-signup`, `checkout` (create session + summary + deep-link), `partial`, `event-log`, `stripe-webhook`.
+- **Referral loop:** `share-click`, `share-context`, `share-issued`, `share-signup`; `track-redirect` (`/fund`,`/fight`).
+- **SMS:** `cellcast-inbound`; enqueue happens inside petition-signup + lapse-sweep.
+- **Read/ops:** `signature-count`, `leaderboard`, `ab-report`, `meta-capi`, `meta-lead-webhook`, `youtube`, `admin/env-check`, `admin/stripe-backfill`.
+- **Rally:** `rally-checkout` (embedded), `rally-webhook`, `rally-claim`.
+- **Cron:** `cron/lapse-sweep` (*/5), `cron/sms-inbound-poll` (hourly), `cron/nightly-rollup` (18:15); callable `cron/sms-queue`, `cron/refresh-signature-count`.
 
-- **Stripe → Payment Link → After payment → Redirect:**
-  `https://<domain>/share.html?session_id={CHECKOUT_SESSION_ID}`
-- **Stripe → Developers → Webhooks → Add endpoint:**
-  `https://<domain>/api/stripe-webhook`, events `checkout.session.completed`, `invoice.paid`.
-- **Frontend config (if not on `fairmigration.vote`)** — set before `common.js` loads:
-  ```html
-  <script>window.FM_CONFIG = { origin: "https://YOURDOMAIN", petitionSlug: "fair-migration", stripePaymentLink: "https://buy.stripe.com/…" };</script>
-  ```
-- **Browser Pixel** — add your Meta Pixel base snippet sitewide; the petition form
-  already fires `Lead` with the server `event_id` for dedup. Add `Purchase` on the
-  `/share` success path if you want browser-side purchase too.
+Shared libs (`api/_*.js`): `_airtable`, `_ops`, `_util`, `_stripe`, `_meta`, `_cellcast`, `_cn`, `_rally`.
 
-## Verify (per the spec's checklist)
+## What you provide to go live
 
-Run §11 of the spec after deploy: new sign → Contact + Event + Signature; repeat
-email → reuse Contact, first-touch preserved; `?ref=` → Share Click; sign after
-`?ref=` → Share Conversion + `referred_by`; real donation with
-`?client_reference_id=` → Donation row with `petition_slug`; webhook resend → no
-dupe; `/share?session_id=…` → correct share link; Meta Events Manager dedup.
+**Required (phases 1–6):** `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID` (set), `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`, `ADMIN_BASIC_AUTH`. Then:
+
+1. Connect the repo to Vercel; add env vars (Preview + Production); deploy.
+2. Stripe → webhook `https://<domain>/api/stripe-webhook` for `checkout.session.completed` + `invoice.paid`.
+3. Confirm the domain (assumed `fairmigration.vote`) or set `PRODUCTION_ORIGIN` + `ALLOWED_ORIGINS`.
+4. Meta Pixel base snippet sitewide (dedup event_id already wired) — optional.
+
+Donations now flow through **`POST /api/checkout`** (server-side session with
+metadata + `client_reference_id`), so no Stripe Payment Link is required. The
+donate buttons call it; success returns to `/share.html?session_id=…`.
+
+**Optional bolt-ons** (each: set its env vars, redeploy):
+- **SMS** — `CELLCAST_*`; wire the inbound webhook to `/api/cellcast-inbound`. Edit copy/links in `api/_cellcast.js`.
+- **Lapse recovery + email** — `CN_*` (4 automations); the `/fund`,`/fight` links are live via `vercel.json` rewrites.
+- **Meta Lead Ads** — Zapier → `/api/event-log` (`source:"meta_lead_ad"`, `petition_slug`), or native `/api/meta-lead-webhook` (add the 13 columns above).
+- **Rally** — `STRIPE_RALLY_*` on a separate Stripe account + its webhook → `/api/rally-webhook`.
+- **YouTube** — `YOUTUBE_CHANNEL_ID`.
+
+## Crons & ops
+
+`vercel.json` declares the three schedules and the `/fund` `/fight` `/leaderboard`
+rewrites. Crons run in **production only** and require `CRON_SECRET`. Basic-auth
+tools: `/leaderboard`, `/api/ab-report?html=1`, `/api/admin/env-check?live=1`,
+`/api/admin/stripe-backfill`.
+
+## Verify after deploy
+
+Run the spec's checklists: sign → Contact+Event+Signature (+SMS Sends row); `?ref=`
+→ Share Click; donation with `?client_reference_id=` → Donations row + `petition_slug`;
+webhook resend → no dup; abandon → after 30 min lapse-sweep enrols/queues; STOP → `sms_opt_out`.
+
+## Front-end note
+
+The site is the existing polished design-system build (not the reference repo's
+`content/site.json` model). All pipeline touchpoints are wired into it:
+attribution capture, share beacon, `signPetition()`, `donateCheckout()`,
+partial-on-blur, and a live `/api/signature-count` read. Decap CMS / `site.json`
+migration was intentionally **not** done — it would replace the working UI.

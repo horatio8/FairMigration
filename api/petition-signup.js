@@ -3,7 +3,9 @@
 
 const { applyCors, send, readJson, clientIp } = require('./_util');
 const AT = require('./_airtable');
+const OPS = require('./_ops');
 const meta = require('./_meta');
+const cellcast = require('./_cellcast');
 
 module.exports = async (req, res) => {
   if (applyCors(req, res)) return;
@@ -35,6 +37,7 @@ module.exports = async (req, res) => {
           payload: { ref, converted_contact_id: contact.contact_id, email },
           referral_code_used: ref, source_channel: 'Referral',
         });
+        OPS.upsertRollup(String(ref).toUpperCase(), { signups: 1 }).catch(() => {});
       }
     }
 
@@ -52,6 +55,9 @@ module.exports = async (req, res) => {
         external_id: contact.contact_id, fbp, fbclid, ip: clientIp(req), ua: req.headers['user-agent'] },
       custom_data: { content_name: body.content_name || 'Petition' },
     }).catch(() => {});
+
+    // A/B-tested thank-you SMS (no-op unless Cellcast configured)
+    cellcast.enqueueSignupSMS({ id: contact.id, fields: Object.assign({}, contact.fields, { referral_code }) }).catch(() => {});
 
     return send(res, 200, { success: true, contact_id: contact.contact_id, referral_code, meta_event_id, is_new_contact: contact.isNew });
   } catch (err) {

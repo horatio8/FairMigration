@@ -4,6 +4,7 @@
 const { send, readRaw } = require('./_util');
 const { verifySignature, stripeGet } = require('./_stripe');
 const AT = require('./_airtable');
+const OPS = require('./_ops');
 const meta = require('./_meta');
 
 // Vercel: keep the body unparsed so we can verify the Stripe signature.
@@ -93,6 +94,15 @@ module.exports = async (req, res) => {
           postcode: cust.postcode, country: cust.country || 'AU', external_id: contact.contact_id, ip: '', ua: '' },
         custom_data: { currency, value: amount_cents / 100, content_name: 'Donation' },
       }).catch(() => {});
+
+      // close the lapse row, credit the referrer, and roll up A/B revenue
+      const md = obj.metadata || {};
+      try { const lp = await OPS.findPendingLapse({ session_id: obj.id }); if (lp) await OPS.updateLapse(lp.id, { status: 'completed', triggered_at: AT.nowISO() }); } catch (e) {}
+      if (md.ref) OPS.upsertRollup(String(md.ref).toUpperCase(), { donations: 1, dollars: amount_cents / 100 }).catch(() => {});
+      if (md.sms_variant === 'A' || md.sms_variant === 'B') {
+        const day = AT.nowISO().slice(0, 10);
+        OPS.upsertAbDaily(day, 'sms_signup', md.sms_variant, { gifts: 1, revenue: amount_cents / 100 }).catch(() => {});
+      }
     }
 
     return send(res, 200, { received: true, duplicate });

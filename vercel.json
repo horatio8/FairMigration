@@ -1,6 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/*.js": { "maxDuration": 15 }
-  }
+  "functions": { "api/**/*.js": { "maxDuration": 30 } },
+  "rewrites": [
+    { "source": "/fund", "destination": "/api/track-redirect?l=fund" },
+    { "source": "/fight", "destination": "/api/track-redirect?l=fight" },
+    { "source": "/leaderboard", "destination": "/api/leaderboard" }
+  ],
+  "crons": [
+    { "path": "/api/cron/lapse-sweep", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/sms-inbound-poll", "schedule": "10 * * * *" },
+    { "path": "/api/cron/nightly-rollup", "schedule": "15 18 * * *" }
+  ]
 }

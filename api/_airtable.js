@@ -11,8 +11,20 @@ const T = {
   events: process.env.AIRTABLE_EVENTS_TABLE || 'Events',
   signatures: process.env.AIRTABLE_PETITION_SIGNATURES_TABLE || 'Petition Signatures',
   donations: process.env.AIRTABLE_DONATIONS_TABLE || 'Donations',
+  lapse: process.env.AIRTABLE_LAPSE_TABLE || 'Lapse Queue',
+  smsSends: process.env.AIRTABLE_SMS_SENDS_TABLE || 'SMS Sends',
+  smsReplies: process.env.AIRTABLE_SMS_REPLIES_TABLE || 'SMS Replies',
+  rollup: process.env.AIRTABLE_REFERRAL_ROLLUP_TABLE || 'Referral Rollup',
+  abDaily: process.env.AIRTABLE_AB_DAILY_TABLE || 'AB Daily',
+  stats: process.env.AIRTABLE_STATS_TABLE || 'Site Stats',
+  rallyTickets: process.env.AIRTABLE_RALLY_TICKETS_TABLE || 'Rally Tickets',
+  rallyComp: process.env.AIRTABLE_RALLY_COMP_TOKENS_TABLE || 'Rally Comp Tokens',
 };
 const PROJECTION_TABLES = { 'Petition Signed': T.signatures, 'Donation': T.donations };
+
+const SIGNATURE_BASE_OFFSET = parseInt(process.env.SIGNATURE_BASE_OFFSET || '69500', 10);
+const SIGNATURE_MILESTONES = (process.env.SIGNATURE_MILESTONES || '90000,95000,100000')
+  .split(',').map((s) => parseInt(s.trim(), 10)).filter(Boolean);
 
 function configured() { return !!(API_KEY && BASE_ID); }
 const uuid = () => crypto.randomUUID();
@@ -130,6 +142,7 @@ async function matchOrCreateContact(input, opts = {}) {
     date_first_seen: nowISO(), last_updated: nowISO(),
   };
   const rec = await createRecord(T.contacts, fields);
+  bumpSignatureCount().catch(() => {});   // new supporter → signature counter
   return { id: rec.id, fields: rec.fields, contact_id, isNew: true };
 }
 
@@ -172,7 +185,12 @@ async function projectFanout(eventRec, eventType, contactId, curated) {
         campaign: p.campaign || p.content_name, consent: p.consent !== false,
         fbclid: p.fbclid, fbp: p.fbp, ref_used: p.ref,
         utm_source: p.utm_source, utm_medium: p.utm_medium, utm_campaign: p.utm_campaign,
-        utm_term: p.utm_term, utm_content: p.utm_content }, base);
+        utm_term: p.utm_term, utm_content: p.utm_content,
+        lead_source: p.lead_source || 'Web form',
+        meta_leadgen_id: p.meta_leadgen_id, meta_form_id: p.meta_form_id, meta_form_name: p.meta_form_name,
+        meta_ad_id: p.meta_ad_id, meta_ad_name: p.meta_ad_name, meta_adset_id: p.meta_adset_id, meta_adset_name: p.meta_adset_name,
+        meta_campaign_id: p.meta_campaign_id, meta_campaign_name: p.meta_campaign_name, meta_page_id: p.meta_page_id,
+        meta_platform: p.meta_platform, meta_partner_name: p.meta_partner_name, meta_created_time: p.meta_created_time }, base);
     } else if (eventType === 'Donation') {
       const p = curated.donation || {};
       fields = Object.assign({ donation_id: uuid(), amount_cents: p.amount_cents, amount: (p.amount_cents || 0) / 100,
@@ -211,8 +229,53 @@ async function logEventIdempotent(args) {
   return { record: rec, duplicate: false };
 }
 
+/* ---------- hashing + deterministic A/B ---------- */
+const sha256hex = (v) => crypto.createHash('sha256').update(String(v)).digest('hex');
+const phoneHash = (e164) => sha256hex(String(e164 || ''));
+function abVariant(seed) {
+  const forced = (process.env.AB_FORCE_VARIANT || 'off').toUpperCase();
+  if (forced === 'A' || forced === 'B') return forced;
+  const h = sha256hex(String(seed || ''));
+  return parseInt(h.slice(-1), 16) % 2 === 0 ? 'A' : 'B';
+}
+
+/* ---------- Site Stats + signature counter ---------- */
+async function getStat(key) {
+  const r = await findOne(T.stats, `{key} = '${esc(key)}'`);
+  return r ? { id: r.id, num: Number(r.fields.num_value) || 0 } : null;
+}
+async function setStat(key, num) {
+  const r = await findOne(T.stats, `{key} = '${esc(key)}'`);
+  if (r) return updateRecord(T.stats, r.id, { num_value: num, updated_at: nowISO() });
+  return createRecord(T.stats, { key, num_value: num, updated_at: nowISO() });
+}
+async function bumpSignatureCount(by = 1) {
+  const cur = await getStat('signature_count');
+  const before = cur ? cur.num : 0;
+  const after = before + by;
+  await setStat('signature_count', after);
+  // milestone crossing on the public number
+  const publicBefore = before + SIGNATURE_BASE_OFFSET, publicAfter = after + SIGNATURE_BASE_OFFSET;
+  for (const m of SIGNATURE_MILESTONES) {
+    if (publicBefore < m && publicAfter >= m) {
+      logEvent({ event_type: 'Milestone Crossed', payload: { milestone: m, count: publicAfter } }).catch(() => {});
+      const hook = process.env.MILESTONE_WEBHOOK_URL;
+      if (hook) { try { fetch(hook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ milestone: m, count: publicAfter }) }); } catch (e) {} }
+    }
+  }
+  return after;
+}
+function publicSignatureCount(raw) {
+  let n = raw + SIGNATURE_BASE_OFFSET;
+  const round = parseInt(process.env.SIGNATURE_ROUND_DOWN_TO || '0', 10);
+  if (round > 0) n = Math.floor(n / round) * round;
+  return n;
+}
+
 module.exports = {
-  configured, uuid, nowISO, normEmail, normPhoneAU,
+  configured, uuid, nowISO, normEmail, normPhoneAU, esc,
   matchOrCreateContact, setReferralCodeIfMissing, resolveReferrerByCode, bumpStatus,
   findOne, createRecord, updateRecord, logEvent, logEventIdempotent, T,
+  sha256hex, phoneHash, abVariant, getStat, setStat, bumpSignatureCount, publicSignatureCount,
+  SIGNATURE_BASE_OFFSET, SIGNATURE_MILESTONES,
 };
