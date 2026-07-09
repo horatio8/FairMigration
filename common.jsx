@@ -305,6 +305,7 @@
       } catch (e2) {}
       setBusy(false);
       if (onSign) onSign(d, result);
+      try { window.dispatchEvent(new CustomEvent('petition-signed', { detail: { first: d.firstName.trim() } })); } catch (e2) {}
     };
     return (
       <form className="pform" onSubmit={submit} noValidate>
@@ -480,10 +481,70 @@
     );
   }
 
+  /* ---------------- Social-proof activity popup ----------------
+     Live "someone just signed / donated" toast. Real events (petition-signed /
+     donation-completed CustomEvents) take priority; a curated sample pool keeps
+     it alive on quiet pages. Renders nothing on /donate and /share. */
+  const SP_NAMES = ['Sarah', 'James', 'Emma', 'Michael', 'Olivia', 'Liam', 'Chloe', 'Noah', 'Ava', 'Jack',
+    'Mia', 'William', 'Grace', 'Thomas', 'Ruby', 'Ethan', 'Sophie', 'Lucas', 'Charlotte', 'Henry',
+    'Isla', 'Oliver', 'Amelia', 'Harry', 'Zoe', 'Daniel', 'Hannah', 'Lachlan', 'Ella', 'Cooper'];
+  const SP_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+  const SP_AMOUNTS = [50, 75, 100, 150, 200];
+  const spRand = (a) => a[Math.floor(Math.random() * a.length)];
+
+  function SocialProofPopup() {
+    const [item, setItem] = useState(null);
+    const [phase, setPhase] = useState('out');
+    const timers = useRef({});
+    const suppressed = typeof window !== 'undefined' && /^\/(donate|share)(\/|$|\.)/.test(window.location.pathname);
+
+    useEffect(() => {
+      if (suppressed) return undefined;
+      const t = timers.current;
+      const hide = () => { setPhase('out'); t.unmount = setTimeout(() => setItem(null), 360); };
+      const show = (next) => { clearTimeout(t.hide); clearTimeout(t.unmount); setItem(next); setPhase('in'); t.hide = setTimeout(hide, 9000); };
+      const idle = () => {
+        if (Math.random() >= 0.75) return show({ kind: 'donation', name: spRand(SP_NAMES), state: spRand(SP_STATES), amount: spRand(SP_AMOUNTS), href: 'donate.html' });
+        return show({ kind: 'petition', name: spRand(SP_NAMES), state: spRand(SP_STATES), href: 'petition.html' });
+      };
+      const onSigned = (e) => show({ kind: 'petition', name: (e.detail && e.detail.first) || spRand(SP_NAMES), state: spRand(SP_STATES), href: 'petition.html' });
+      const onDonated = (e) => { const a = e.detail && e.detail.amount; if (a == null || a >= 50) show({ kind: 'donation', name: (e.detail && e.detail.first) || spRand(SP_NAMES), state: spRand(SP_STATES), amount: a || spRand(SP_AMOUNTS), href: 'donate.html' }); };
+      window.addEventListener('petition-signed', onSigned);
+      window.addEventListener('donation-completed', onDonated);
+      t.first = setTimeout(() => { if (!document.hidden) idle(); }, 8000);
+      t.iv = setInterval(() => { if (!document.hidden) idle(); }, 60000);
+      // expose so the /share purchase handler could fire one elsewhere if wanted
+      return () => {
+        window.removeEventListener('petition-signed', onSigned);
+        window.removeEventListener('donation-completed', onDonated);
+        Object.values(t).forEach((x) => { clearTimeout(x); clearInterval(x); });
+      };
+    }, [suppressed]);
+
+    if (suppressed || !item) return null;
+    const isPet = item.kind === 'petition';
+    const text = isPet
+      ? `${item.name} from ${item.state} just signed the petition.`
+      : `${item.name} from ${item.state} just donated $${item.amount} to Fair Migration.`;
+    const cta = isPet ? 'Add your name today' : 'Chip in today';
+    const dismiss = (e) => { e.preventDefault(); e.stopPropagation(); setPhase('out'); timers.current.unmount = setTimeout(() => setItem(null), 360); };
+    return (
+      <a className={'ff-sp ff-sp--' + item.kind + ' ff-sp--' + phase} href={item.href} aria-label={text}>
+        <span className="ff-sp-icon" aria-hidden="true">{isPet ? '★' : '♥'}</span>
+        <span className="ff-sp-body">
+          <span className="ff-sp-text">{text}</span>
+          <span className="ff-sp-cta">{cta} →</span>
+        </span>
+        <button className="ff-sp-close" aria-label="Dismiss" onClick={dismiss}>×</button>
+      </a>
+    );
+  }
+
   /* ---------------- Footer ---------------- */
   function Footer() {
     return (
       <React.Fragment>
+        <SocialProofPopup />
         <div className="foot-cta">
           <div className="container foot-cta-inner">
             <h2>Australia's future is worth a signature.</h2>

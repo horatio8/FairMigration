@@ -2,8 +2,8 @@
 
 Static site + dependency-free Vercel serverless pipeline: petitions → donations →
 referral loop, plus abandoned-cart recovery, A/B SMS, email flows, a signature
-counter, reporting, Meta Lead Ads, and rally ticketing. Implements the Farmers
-Fightback build spec on the Fair Migration site.
+counter, reporting, Meta Lead Ads, and rally ticketing — the full campaign
+platform, built for Fair Migration.
 
 The **code is complete and self-contained** (Node built-ins only — no `npm install`).
 Every integration is gated by env vars: unset = feature disabled, nothing crashes.
