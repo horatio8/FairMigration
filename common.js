@@ -269,6 +269,53 @@
       fill: color
     }));
   }
+  function SvgIcon({
+    name
+  }) {
+    const p = {
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: 2,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round'
+    };
+    const icons = {
+      home: React.createElement("g", p, React.createElement("path", {
+        d: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+      }), React.createElement("path", {
+        d: "M9 22V12h6v10"
+      })),
+      pulse: React.createElement("g", p, React.createElement("path", {
+        d: "M22 12h-4l-3 9L9 3l-3 9H2"
+      })),
+      layers: React.createElement("g", p, React.createElement("path", {
+        d: "M12 2 2 7l10 5 10-5-10-5z"
+      }), React.createElement("path", {
+        d: "m2 17 10 5 10-5"
+      }), React.createElement("path", {
+        d: "m2 12 10 5 10-5"
+      })),
+      access: React.createElement("g", p, React.createElement("circle", {
+        cx: "16",
+        cy: "4",
+        r: "1"
+      }), React.createElement("path", {
+        d: "m18 19 1-7-6 1"
+      }), React.createElement("path", {
+        d: "m5 8 3-3 5.5 3-2.36 3.5"
+      }), React.createElement("path", {
+        d: "M4.24 14.5a5 5 0 0 0 6.88 6"
+      }), React.createElement("path", {
+        d: "M13.76 17.5a5 5 0 0 0-6.88-6"
+      }))
+    };
+    return React.createElement("svg", {
+      width: "24",
+      height: "24",
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true"
+    }, icons[name] || null);
+  }
   function SiteNav({
     active,
     count
@@ -448,21 +495,25 @@
   }) {
     const items = [{
       idx: '01',
+      icon: 'home',
       stat: '+39%',
       h: 'Housing',
       p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.'
     }, {
       idx: '02',
+      icon: 'pulse',
       stat: 'Strained',
       h: 'Healthcare',
       p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.'
     }, {
       idx: '03',
+      icon: 'layers',
       stat: 'Gridlock',
       h: 'Infrastructure',
       p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.'
     }, {
       idx: '04',
+      icon: 'access',
       stat: 'Uncapped',
       h: 'Disability (NDIS)',
       p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.'
@@ -490,8 +541,14 @@
       className: "pressure",
       key: it.idx
     }, React.createElement("div", {
+      className: "pressure-top"
+    }, React.createElement("span", {
+      className: "pressure-ic"
+    }, React.createElement(SvgIcon, {
+      name: it.icon
+    })), React.createElement("span", {
       className: "pressure-idx"
-    }, it.idx), React.createElement("div", {
+    }, it.idx)), React.createElement("div", {
       className: "pressure-stat"
     }, it.stat), React.createElement("div", {
       className: "pressure-h"

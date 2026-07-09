@@ -155,6 +155,18 @@
     );
   }
 
+  /* line icons (Lucide-style, 2px stroke) for the problem cards */
+  function SvgIcon({ name }) {
+    const p = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+    const icons = {
+      home: <g {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M9 22V12h6v10" /></g>,
+      pulse: <g {...p}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></g>,
+      layers: <g {...p}><path d="M12 2 2 7l10 5 10-5-10-5z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" /></g>,
+      access: <g {...p}><circle cx="16" cy="4" r="1" /><path d="m18 19 1-7-6 1" /><path d="m5 8 3-3 5.5 3-2.36 3.5" /><path d="M4.24 14.5a5 5 0 0 0 6.88 6" /><path d="M13.76 17.5a5 5 0 0 0-6.88-6" /></g>,
+    };
+    return <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">{icons[name] || null}</svg>;
+  }
+
   /* ---------------- sticky top: utility bar + custom header ---------------- */
   function SiteNav({ active, count }) {
     const [open, setOpen] = useState(false);
@@ -251,10 +263,10 @@
   /* ---------------- The problem ---------------- */
   function Problem({ bare }) {
     const items = [
-      { idx: '01', stat: '+39%', h: 'Housing', p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.' },
-      { idx: '02', stat: 'Strained', h: 'Healthcare', p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.' },
-      { idx: '03', stat: 'Gridlock', h: 'Infrastructure', p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.' },
-      { idx: '04', stat: 'Uncapped', h: 'Disability (NDIS)', p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.' },
+      { idx: '01', icon: 'home', stat: '+39%', h: 'Housing', p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.' },
+      { idx: '02', icon: 'pulse', stat: 'Strained', h: 'Healthcare', p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.' },
+      { idx: '03', icon: 'layers', stat: 'Gridlock', h: 'Infrastructure', p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.' },
+      { idx: '04', icon: 'access', stat: 'Uncapped', h: 'Disability (NDIS)', p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.' },
     ];
     return (
       <section id="problem" className="section">
@@ -269,7 +281,10 @@
           <div className="pressures">
             {items.map((it) => (
               <div className="pressure" key={it.idx}>
-                <div className="pressure-idx">{it.idx}</div>
+                <div className="pressure-top">
+                  <span className="pressure-ic"><SvgIcon name={it.icon} /></span>
+                  <span className="pressure-idx">{it.idx}</span>
+                </div>
                 <div className="pressure-stat">{it.stat}</div>
                 <div className="pressure-h">{it.h}</div>
                 <p className="pressure-p">{it.p}</p>
