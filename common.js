@@ -1,4 +1,9 @@
-"use strict";
+/* =====================================================================
+   Fair Migration — shared module (window.FM)
+   Header (with pink Sign button), footer, signature bar, the petition
+   form (first/last/email/mobile/postcode) and content sections, all
+   reused across the multi-page site.
+   ===================================================================== */
 
 (function () {
   const {
@@ -34,11 +39,15 @@
     safeSet('fm_signed', '1');
     if (data && data.postcode) safeSet('fm_pc', clean4(data.postcode));
   }
+
+  /* ---------- config (override per-site by setting window.FM_CONFIG before this script) ---------- */
   const CFG = Object.assign({
     origin: 'https://fairmigration.vote',
     petitionSlug: 'fair-migration',
-    stripePaymentLink: ''
+    stripePaymentLink: '' // paste the Stripe Payment Link URL to enable real donations
   }, window.FM_CONFIG || {});
+
+  /* ---------- attribution capture (sessionStorage) + share-click beacon ---------- */
   const ATTR_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid', 'ttclid', 'li_fat_id', 'msclkid', 'twclid', 'sccid', 'ad_id', 'adset_id', 'campaign_id', 'placement', 'ref'];
   function getAttr() {
     try {
@@ -100,6 +109,8 @@
       });
     } catch (e) {}
   }
+
+  /* ---------- shared petition submit: POST to the first-party API, then UI ---------- */
   async function signPetition(data) {
     try {
       localStorage.setItem('ff_last_petition_url', window.location.href);
@@ -149,6 +160,8 @@
     }
     return result;
   }
+
+  /* ---------- Stripe: tag a donate URL with the petition slug at click time ---------- */
   function appendClientRef(url, slug) {
     if (!url || !slug) return url;
     try {
@@ -159,10 +172,13 @@
       return url;
     }
   }
+
+  /* live, drifting signature count (shared starting point across pages) */
   function useLiveCount() {
     const [count, setCount] = useState(48217 + (safeGet('fm_signed') === '1' ? 1 : 0));
     useEffect(() => {
       let live = true;
+      // prefer the real server counter when the backend is deployed
       fetch('/api/signature-count').then(r => r.ok ? r.json() : null).then(j => {
         if (live && j && j.count) setCount(j.count);
       }).catch(() => {});
@@ -174,6 +190,8 @@
     }, []);
     return [count, setCount];
   }
+
+  /* ---------------- server-side Stripe checkout (falls back to Payment Link) ---------------- */
   async function donateCheckout({
     amount,
     frequency
@@ -181,6 +199,17 @@
     const a = getAttr();
     const uc = a.utm_content;
     const sms_variant = uc === 'ben' ? 'A' : uc === 'issue' ? 'B' : undefined;
+    // Meta funnel: signal checkout intent (Purchase fires later, deduped on the Stripe session id)
+    if (window.fbq) {
+      try {
+        window.fbq('track', 'InitiateCheckout', {
+          value: Number(amount) || 0,
+          currency: 'AUD',
+          content_name: 'FairMigration',
+          content_category: frequency === 'monthly' ? 'monthly' : 'oneoff'
+        });
+      } catch (e) {}
+    }
     const body = {
       amount,
       frequency,
@@ -215,6 +244,8 @@
       window.alert('Donations are being connected — please check back shortly.');
     }
   }
+
+  // fire an abandoned-form partial once per identity per page
   let _partialFired = false;
   function firePartial(form, data) {
     if (_partialFired) return;
@@ -236,10 +267,12 @@
     children,
     variant
   }) {
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: 'eyebrow' + (variant ? ' eyebrow--' + variant : '')
     }, children);
   }
+
+  /* 7-point Commonwealth star — the brand's recurring graphic device */
   function Star({
     size = 42,
     color = 'var(--navy-700)',
@@ -257,18 +290,20 @@
       const a = Math.PI / N * i - Math.PI / 2;
       pts.push((cx + rad * Math.cos(a)).toFixed(2) + ',' + (cy + rad * Math.sin(a)).toFixed(2));
     }
-    return React.createElement("svg", {
+    return /*#__PURE__*/React.createElement("svg", {
       className: className,
       style: style,
       width: size,
       height: size,
       viewBox: "0 0 100 100",
       "aria-hidden": "true"
-    }, React.createElement("polygon", {
+    }, /*#__PURE__*/React.createElement("polygon", {
       points: pts.join(' '),
       fill: color
     }));
   }
+
+  /* line icons (Lucide-style, 2px stroke) for the problem cards */
   function SvgIcon({
     name
   }) {
@@ -280,61 +315,63 @@
       strokeLinejoin: 'round'
     };
     const icons = {
-      home: React.createElement("g", p, React.createElement("path", {
+      home: /*#__PURE__*/React.createElement("g", p, /*#__PURE__*/React.createElement("path", {
         d: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "M9 22V12h6v10"
       })),
-      pulse: React.createElement("g", p, React.createElement("path", {
+      pulse: /*#__PURE__*/React.createElement("g", p, /*#__PURE__*/React.createElement("path", {
         d: "M22 12h-4l-3 9L9 3l-3 9H2"
       })),
-      layers: React.createElement("g", p, React.createElement("path", {
+      layers: /*#__PURE__*/React.createElement("g", p, /*#__PURE__*/React.createElement("path", {
         d: "M12 2 2 7l10 5 10-5-10-5z"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "m2 17 10 5 10-5"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "m2 12 10 5 10-5"
       })),
-      access: React.createElement("g", p, React.createElement("circle", {
+      access: /*#__PURE__*/React.createElement("g", p, /*#__PURE__*/React.createElement("circle", {
         cx: "16",
         cy: "4",
         r: "1"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "m18 19 1-7-6 1"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "m5 8 3-3 5.5 3-2.36 3.5"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "M4.24 14.5a5 5 0 0 0 6.88 6"
-      }), React.createElement("path", {
+      }), /*#__PURE__*/React.createElement("path", {
         d: "M13.76 17.5a5 5 0 0 0-6.88-6"
       }))
     };
-    return React.createElement("svg", {
+    return /*#__PURE__*/React.createElement("svg", {
       width: "24",
       height: "24",
       viewBox: "0 0 24 24",
       "aria-hidden": "true"
     }, icons[name] || null);
   }
+
+  /* ---------------- sticky top: utility bar + custom header ---------------- */
   function SiteNav({
     active,
     count
   }) {
     const [open, setOpen] = useState(false);
-    const link = (key, href, label) => React.createElement("a", {
+    const link = (key, href, label) => /*#__PURE__*/React.createElement("a", {
       className: 'navlink' + (active === key ? ' is-active' : ''),
       href: href,
       onClick: () => setOpen(false)
     }, label);
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "site-top"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "util-bar"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "util-inner"
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "util-count"
-    }, React.createElement("img", {
+    }, /*#__PURE__*/React.createElement("img", {
       className: "tick-star",
       src: A + 'favicon-white.png',
       alt: "",
@@ -342,22 +379,22 @@
         width: 14,
         height: 14
       }
-    }), React.createElement("b", null, fmt(count != null ? count : 48217)), "\xA0Australians have signed \xB7", ' ', React.createElement("a", {
+    }), /*#__PURE__*/React.createElement("b", null, fmt(count != null ? count : 48217)), "\xA0Australians have signed ·", ' ', /*#__PURE__*/React.createElement("a", {
       href: "petition.html"
-    }, "Add your name")))), React.createElement("header", {
+    }, "Add your name")))), /*#__PURE__*/React.createElement("header", {
       className: "site-nav"
-    }, React.createElement("a", {
+    }, /*#__PURE__*/React.createElement("a", {
       className: "site-nav-brand",
       href: "index.html"
-    }, React.createElement("img", {
+    }, /*#__PURE__*/React.createElement("img", {
       src: A + 'logo-full.png',
       alt: "Fair Migration"
-    })), React.createElement("button", {
+    })), /*#__PURE__*/React.createElement("button", {
       className: "site-nav-burger",
       "aria-label": "Toggle menu",
       "aria-expanded": open,
       onClick: () => setOpen(o => !o)
-    }, React.createElement("svg", {
+    }, /*#__PURE__*/React.createElement("svg", {
       width: "22",
       height: "22",
       viewBox: "0 0 24 24",
@@ -365,131 +402,137 @@
       stroke: "currentColor",
       strokeWidth: "2.2",
       strokeLinecap: "round"
-    }, open ? React.createElement("g", null, React.createElement("line", {
+    }, open ? /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("line", {
       x1: "5",
       y1: "5",
       x2: "19",
       y2: "19"
-    }), React.createElement("line", {
+    }), /*#__PURE__*/React.createElement("line", {
       x1: "19",
       y1: "5",
       x2: "5",
       y2: "19"
-    })) : React.createElement("g", null, React.createElement("line", {
+    })) : /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("line", {
       x1: "3",
       y1: "7",
       x2: "21",
       y2: "7"
-    }), React.createElement("line", {
+    }), /*#__PURE__*/React.createElement("line", {
       x1: "3",
       y1: "12",
       x2: "21",
       y2: "12"
-    }), React.createElement("line", {
+    }), /*#__PURE__*/React.createElement("line", {
       x1: "3",
       y1: "17",
       x2: "21",
       y2: "17"
-    })))), React.createElement("nav", {
+    })))), /*#__PURE__*/React.createElement("nav", {
       className: 'site-nav-links' + (open ? ' is-open' : '')
-    }, link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'map.html', "Your suburb's migration"), React.createElement("a", {
+    }, link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'map.html', "Your suburb's migration"), /*#__PURE__*/React.createElement("a", {
       className: "btn-sign",
       href: "petition.html"
-    }, "Sign the petition \u203A"), React.createElement(Button, {
+    }, "Sign the petition ›"), /*#__PURE__*/React.createElement(Button, {
       variant: "donate",
       size: "sm",
       href: "donate.html"
     }, "Donate"))));
   }
+
+  /* ---------------- Hero ---------------- */
   function Hero({
     count
   }) {
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       className: "hero"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "hero-left"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "hero-inner"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "hero-text"
-    }, React.createElement(Eyebrow, {
+    }, /*#__PURE__*/React.createElement(Eyebrow, {
       variant: "light"
-    }, "A campaign for everyday Australians"), React.createElement("h1", {
+    }, "A campaign for everyday Australians"), /*#__PURE__*/React.createElement("h1", {
       className: "display"
-    }, "Australians don't have to live like this."), React.createElement("p", {
+    }, "Australians don't have to live like this."), /*#__PURE__*/React.createElement("p", {
       className: "hero-redline"
-    }, "Put Australians first."), React.createElement("p", {
+    }, "Put Australians first."), /*#__PURE__*/React.createElement("p", {
       className: "hero-lead"
-    }, "Australia's migration system has reached a critical tipping point \u2014 and it's ", React.createElement("span", {
+    }, "Australia's migration system has reached a critical tipping point — and it's ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, "your"), " rent,", React.createElement("span", {
+    }, "your"), " rent,", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, " your"), " hospital queue and ", React.createElement("span", {
+    }, " your"), " hospital queue and ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, " your"), " commute paying the price."), React.createElement("div", {
+    }, " your"), " commute paying the price."), /*#__PURE__*/React.createElement("div", {
       className: "hero-cta"
-    }, React.createElement(Button, {
+    }, /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
-    }, "Sign the petition"), React.createElement(Button, {
+    }, "Sign the petition"), /*#__PURE__*/React.createElement(Button, {
       variant: "solid",
       size: "lg",
       href: "map.html"
-    }, "See your suburb \u2192"))))));
+    }, "See your suburb →"))))));
   }
+
+  /* ---------------- Signature bar ---------------- */
   function SignatureBar({
     count
   }) {
     const p = pct(count);
     const remaining = Math.max(0, GOAL - count);
     const milestones = [25000, 50000, GOAL];
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       className: "sigbar",
       "aria-label": "Petition signature count"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container container--wide sigbar-inner"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-count"
-    }, React.createElement(Star, {
+    }, /*#__PURE__*/React.createElement(Star, {
       size: 44,
       className: "sigbar-star"
-    }), React.createElement("div", null, React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-num"
-    }, fmt(count)), React.createElement("div", {
+    }, fmt(count)), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-label"
-    }, "Australians have signed"))), React.createElement("div", {
+    }, "Australians have signed"))), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-progress"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-track"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-fill",
       style: {
         width: p + '%'
       }
-    }), milestones.map(m => React.createElement("span", {
+    }), milestones.map(m => /*#__PURE__*/React.createElement("span", {
       key: m,
       className: "sigbar-tick",
       style: {
         left: pct(m) + '%'
       }
-    })), React.createElement("span", {
+    })), /*#__PURE__*/React.createElement("span", {
       className: "sigbar-bubble",
       style: {
         left: p + '%'
       }
-    }, Math.round(p), "%")), React.createElement("div", {
+    }, Math.round(p), "%")), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-meta"
-    }, React.createElement("span", null, React.createElement("b", null, fmt(remaining)), " more to reach our goal of ", fmt(GOAL)), React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, fmt(remaining)), " more to reach our goal of ", fmt(GOAL)), /*#__PURE__*/React.createElement("span", {
       className: "sigbar-live"
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "sigbar-dot"
-    }), " Updating live"))), React.createElement(Button, {
+    }), " Updating live"))), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
     }, "Add your name")));
   }
+
+  /* ---------------- The problem ---------------- */
   function Problem({
     bare
   }) {
@@ -518,44 +561,46 @@
       h: 'Disability (NDIS)',
       p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.'
     }];
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       id: "problem",
       className: "section"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container container--wide"
-    }, !bare && React.createElement("div", {
+    }, !bare && /*#__PURE__*/React.createElement("div", {
       className: "section-head"
-    }, React.createElement(Eyebrow, null, "Our migration problem"), React.createElement("h2", {
+    }, /*#__PURE__*/React.createElement(Eyebrow, null, "Our migration problem"), /*#__PURE__*/React.createElement("h2", {
       className: "h2-display"
-    }, "For years, our leaders drove radical migration intakes. ", React.createElement("span", {
+    }, "For years, our leaders drove radical migration intakes. ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--red-500)'
       }
-    }, "Everyday Australians were left to suffer.")), React.createElement("p", {
+    }, "Everyday Australians were left to suffer.")), /*#__PURE__*/React.createElement("p", {
       className: "lead-p"
-    }, "Our Government ", React.createElement("span", {
+    }, "Our Government ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, "MUST"), " put Australians first. Mass migration lands hardest on the things you rely on \u2014 ", React.createElement("strong", null, "housing, healthcare, infrastructure"), ", and now ", React.createElement("strong", null, "disability support"), ".")), React.createElement("div", {
+    }, "MUST"), " put Australians first. Mass migration lands hardest on the things you rely on — ", /*#__PURE__*/React.createElement("strong", null, "housing, healthcare, infrastructure"), ", and now ", /*#__PURE__*/React.createElement("strong", null, "disability support"), ".")), /*#__PURE__*/React.createElement("div", {
       className: "pressures"
-    }, items.map(it => React.createElement("div", {
+    }, items.map(it => /*#__PURE__*/React.createElement("div", {
       className: "pressure",
       key: it.idx
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "pressure-top"
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "pressure-ic"
-    }, React.createElement(SvgIcon, {
+    }, /*#__PURE__*/React.createElement(SvgIcon, {
       name: it.icon
-    })), React.createElement("span", {
+    })), /*#__PURE__*/React.createElement("span", {
       className: "pressure-idx"
-    }, it.idx)), React.createElement("div", {
+    }, it.idx)), /*#__PURE__*/React.createElement("div", {
       className: "pressure-stat"
-    }, it.stat), React.createElement("div", {
+    }, it.stat), /*#__PURE__*/React.createElement("div", {
       className: "pressure-h"
-    }, it.h), React.createElement("p", {
+    }, it.h), /*#__PURE__*/React.createElement("p", {
       className: "pressure-p"
     }, it.p))))));
   }
+
+  /* ---------------- Petition form (first/last/email/mobile/postcode) ---------------- */
   function PetitionForm({
     onSign,
     cta = 'Sign the petition'
@@ -588,6 +633,7 @@
       if (!d.email.trim()) n.email = 'Required';else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) n.email = 'Enter a valid email address';
       setErr(n);
       if (Object.keys(n).length) return;
+      // POST to the first-party API (mapped to API field names); UI proceeds even if it fails.
       setBusy(true);
       let result = null;
       try {
@@ -610,13 +656,13 @@
         }));
       } catch (e2) {}
     };
-    return React.createElement("form", {
+    return /*#__PURE__*/React.createElement("form", {
       className: "pform",
       onSubmit: submit,
       noValidate: true
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "pform-grid2"
-    }, React.createElement(Input, {
+    }, /*#__PURE__*/React.createElement(Input, {
       label: "First name *",
       name: "firstName",
       placeholder: "Jane",
@@ -625,7 +671,7 @@
       invalid: !!err.firstName,
       hint: err.firstName,
       autoComplete: "given-name"
-    }), React.createElement(Input, {
+    }), /*#__PURE__*/React.createElement(Input, {
       label: "Last name *",
       name: "lastName",
       placeholder: "Citizen",
@@ -634,7 +680,7 @@
       invalid: !!err.lastName,
       hint: err.lastName,
       autoComplete: "family-name"
-    })), React.createElement(Input, {
+    })), /*#__PURE__*/React.createElement(Input, {
       label: "Email *",
       type: "email",
       name: "email",
@@ -653,7 +699,7 @@
           postcode: d.postcode.trim()
         });
       }
-    }), React.createElement(Input, {
+    }), /*#__PURE__*/React.createElement(Input, {
       label: "Mobile phone",
       type: "tel",
       name: "mobile",
@@ -661,7 +707,7 @@
       value: d.mobile,
       onChange: set('mobile'),
       autoComplete: "tel"
-    }), React.createElement(Input, {
+    }), /*#__PURE__*/React.createElement(Input, {
       label: "Postcode",
       name: "postcode",
       placeholder: "2000",
@@ -670,186 +716,194 @@
       inputMode: "numeric",
       maxLength: 4,
       autoComplete: "postal-code"
-    }), React.createElement(Button, {
+    }), /*#__PURE__*/React.createElement(Button, {
       type: "submit",
       variant: "primary",
       size: "lg",
       fullWidth: true,
       disabled: busy
-    }, busy ? 'Signing…' : cta), React.createElement("p", {
+    }, busy ? 'Signing…' : cta), /*#__PURE__*/React.createElement("p", {
       className: "pform-fine"
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "req"
-    }, "*"), " Required. We'll send you campaign updates \u2014 unsubscribe anytime."));
+    }, "*"), " Required. We'll send you campaign updates — unsubscribe anytime."));
   }
   function ThanksCard({
     count,
     pc
   }) {
     const mapHref = 'map.html' + (pc ? '?pc=' + pc : '');
-    return React.createElement(Card, {
+    return /*#__PURE__*/React.createElement(Card, {
       accent: "navy",
       elevated: true
-    }, React.createElement(Badge, {
+    }, /*#__PURE__*/React.createElement(Badge, {
       tone: "success"
-    }, "Signed"), React.createElement("h3", {
+    }, "Signed"), /*#__PURE__*/React.createElement("h3", {
       style: {
         fontSize: '24px',
         fontWeight: 900,
         letterSpacing: '-0.02em',
         margin: '14px 0 8px'
       }
-    }, "Thank you for standing up."), React.createElement("p", {
+    }, "Thank you for standing up."), /*#__PURE__*/React.createElement("p", {
       style: {
         fontSize: '15px',
         lineHeight: 1.6,
         color: 'var(--ink-700)',
         margin: '0 0 16px'
       }
-    }, "You're one of ", React.createElement("strong", {
+    }, "You're one of ", /*#__PURE__*/React.createElement("strong", {
       style: {
         color: 'var(--navy-700)'
       }
-    }, fmt(count)), " Australians demanding fair migration.", pc ? ' We’ve pinned your local impact map — see what’s happening in your suburb.' : ''), React.createElement(Button, {
+    }, fmt(count)), " Australians demanding fair migration.", pc ? ' We’ve pinned your local impact map — see what’s happening in your suburb.' : ''), /*#__PURE__*/React.createElement(Button, {
       variant: "solid",
       fullWidth: true,
       href: mapHref
-    }, "View my local impact \u2192"), React.createElement("div", {
+    }, "View my local impact →"), /*#__PURE__*/React.createElement("div", {
       style: {
         height: '8px'
       }
-    }), React.createElement(Button, {
+    }), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       fullWidth: true,
       href: "share.html"
-    }, "Share with friends \u2192"), React.createElement("div", {
+    }, "Share with friends →"), /*#__PURE__*/React.createElement("div", {
       style: {
         height: '8px'
       }
-    }), React.createElement(Button, {
+    }), /*#__PURE__*/React.createElement(Button, {
       variant: "donate",
       fullWidth: true,
       href: "donate.html"
     }, "Chip in to the campaign"));
   }
+
+  /* ---------------- Petition section (argument + goal + form) ---------------- */
   function PetitionSection({
     count,
     signed,
     pc,
     onSign
   }) {
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       id: "petition",
       className: "section section--tint"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "section-head",
       style: {
         margin: '0 auto',
         textAlign: 'center'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         justifyContent: 'center'
       }
-    }, React.createElement(Eyebrow, {
+    }, /*#__PURE__*/React.createElement(Eyebrow, {
       variant: "navy"
-    }, "Add your name")), React.createElement("h2", {
+    }, "Add your name")), /*#__PURE__*/React.createElement("h2", {
       className: "h2-display"
-    }, "Sign the petition")), React.createElement("div", {
+    }, "Sign the petition")), /*#__PURE__*/React.createElement("div", {
       className: "petition-grid"
-    }, React.createElement("div", null, React.createElement("blockquote", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("blockquote", {
       className: "petition-quote"
-    }, React.createElement("p", {
+    }, /*#__PURE__*/React.createElement("p", {
       className: "petition-quote-lead"
-    }, "We call for an immediate overhaul of Australia's migration policies so that it works in ", React.createElement("span", {
+    }, "We call for an immediate overhaul of Australia's migration policies so that it works in ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, "OUR"), " best interests:"), React.createElement("ol", {
+    }, "OUR"), " best interests:"), /*#__PURE__*/React.createElement("ol", {
       className: "petition-demands"
-    }, React.createElement("li", null, "An immediate reduction in the migration intake."), React.createElement("li", null, "A full review of broken, unsustainable migration policy."), React.createElement("li", null, "A system run in the interests of Australians first.")))), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("li", null, "An immediate reduction in the migration intake."), /*#__PURE__*/React.createElement("li", null, "A full review of broken, unsustainable migration policy."), /*#__PURE__*/React.createElement("li", null, "A system run in the interests of Australians first.")))), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'sticky',
         top: '120px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "goal-block"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "goal-row"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "goal-now"
-    }, fmt(count), " ", React.createElement("span", null, "signatures")), React.createElement("div", {
+    }, fmt(count), " ", /*#__PURE__*/React.createElement("span", null, "signatures")), /*#__PURE__*/React.createElement("div", {
       className: "goal-target"
-    }, fmt(GOAL), " goal")), React.createElement("div", {
+    }, fmt(GOAL), " goal")), /*#__PURE__*/React.createElement("div", {
       className: "goal-bar"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "goal-fill",
       style: {
         width: pct(count) + '%'
       }
-    }))), signed ? React.createElement(ThanksCard, {
+    }))), signed ? /*#__PURE__*/React.createElement(ThanksCard, {
       count: count,
       pc: pc
-    }) : React.createElement(PetitionForm, {
+    }) : /*#__PURE__*/React.createElement(PetitionForm, {
       onSign: onSign
     })))));
   }
+
+  /* ---------------- Map on a dark stage ---------------- */
   function MapStage({
     registerApi,
     onSign
   }) {
     const Tool = window.PostcodeTool;
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       id: "map",
       className: "section section--dark"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container container--wide"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "section-head map-head"
-    }, React.createElement(Eyebrow, {
+    }, /*#__PURE__*/React.createElement(Eyebrow, {
       variant: "light"
-    }, "Local impact map"), React.createElement("h2", {
+    }, "Local impact map"), /*#__PURE__*/React.createElement("h2", {
       className: "h2-display"
-    }, "How much is ", React.createElement("span", {
+    }, "How much is ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--coral-400)'
       }
-    }, "your"), " postcode absorbing?"), React.createElement("p", {
+    }, "your"), " postcode absorbing?"), /*#__PURE__*/React.createElement("p", {
       className: "map-lead"
-    }, "Migration is decided in Canberra \u2014 but it lands on your street. Enter your postcode for real ABS figures on migration intensity, population growth and rental stress \u2014 and how your area ranks against the nation.")), React.createElement("div", {
+    }, "Migration is decided in Canberra — but it lands on your street. Enter your postcode for real ABS figures on migration intensity, population growth and rental stress — and how your area ranks against the nation.")), /*#__PURE__*/React.createElement("div", {
       className: "map-stage"
-    }, Tool ? React.createElement(Tool, {
+    }, Tool ? /*#__PURE__*/React.createElement(Tool, {
       registerApi: registerApi,
       onSign: onSign
     }) : null)));
   }
+
+  /* ---------------- Manifesto demand ---------------- */
   function Demand() {
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       className: "section"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "manifesto"
-    }, React.createElement(Eyebrow, null, "Our demand to Canberra"), React.createElement(Star, {
+    }, /*#__PURE__*/React.createElement(Eyebrow, null, "Our demand to Canberra"), /*#__PURE__*/React.createElement(Star, {
       size: 40,
       className: "star",
       style: {
         display: 'block',
         marginTop: 26
       }
-    }), React.createElement("p", {
+    }), /*#__PURE__*/React.createElement("p", {
       className: "demand-quote"
-    }, "We demand an ", React.createElement("span", {
+    }, "We demand an ", /*#__PURE__*/React.createElement("span", {
       className: "r"
-    }, "immediate overhaul"), " of Australia's migration system. The current system is ", React.createElement("span", {
+    }, "immediate overhaul"), " of Australia's migration system. The current system is ", /*#__PURE__*/React.createElement("span", {
       className: "n"
-    }, "broken"), ", unsustainable and putting an unfair strain on Australians."), React.createElement(Button, {
+    }, "broken"), ", unsustainable and putting an unfair strain on Australians."), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
     }, "Add your name"))));
   }
+
+  /* ---------------- Donate: split layout + amount grid ---------------- */
   const DONATE_AMOUNTS = [35, 65, 135, 265, 550, 1500];
   function suggestedMonthly(oneoff) {
     return Math.max(5, Math.round(oneoff * 0.2 / 5) * 5);
@@ -857,7 +911,7 @@
   function DonateBlock() {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
     const upsell = params.get('upsell') || params.get('cs');
-    if (upsell) return React.createElement(MonthlyUpsell, {
+    if (upsell) return /*#__PURE__*/React.createElement(MonthlyUpsell, {
       sessionId: upsell
     });
     const [freq, setFreq] = useState('oneoff');
@@ -874,41 +928,41 @@
         });
       }
     };
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       id: "donate",
       className: "donate-hero"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container container--wide donate-grid"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "donate-msg"
-    }, React.createElement(Eyebrow, {
+    }, /*#__PURE__*/React.createElement(Eyebrow, {
       variant: "light"
-    }, "Donate"), React.createElement("h1", {
+    }, "Donate"), /*#__PURE__*/React.createElement("h1", {
       className: "donate-head"
-    }, "They have ", React.createElement("span", {
+    }, "They have ", /*#__PURE__*/React.createElement("span", {
       className: "donate-billions"
-    }, "BILLION$"), ". We need you."), React.createElement("p", {
+    }, "BILLION$"), ". We need you."), /*#__PURE__*/React.createElement("p", {
       className: "donate-copy"
-    }, "Fair Migration is funded by Australians \u2014 not corporations, not the big party machines. Every dollar puts the case for fair migration in front of more voters: ads, research, and organising on the ground."), React.createElement("p", {
+    }, "Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar puts the case for fair migration in front of more voters: ads, research, and organising on the ground."), /*#__PURE__*/React.createElement("p", {
       className: "donate-trust"
-    }, "Stripe-secured \xB7 All amounts in AUD \xB7 Not tax-deductible")), React.createElement("div", {
+    }, "Stripe-secured · All amounts in AUD · Not tax-deductible")), /*#__PURE__*/React.createElement("div", {
       className: "donate-card"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "donate-toggle",
       role: "tablist"
-    }, React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       role: "tab",
       "aria-selected": freq === 'oneoff',
       className: freq === 'oneoff' ? 'is-on' : '',
       onClick: () => setFreq('oneoff')
-    }, "One-off"), React.createElement("button", {
+    }, "One-off"), /*#__PURE__*/React.createElement("button", {
       role: "tab",
       "aria-selected": freq === 'monthly',
       className: freq === 'monthly' ? 'is-on' : '',
       onClick: () => setFreq('monthly')
-    }, "Monthly")), React.createElement("div", {
+    }, "Monthly")), /*#__PURE__*/React.createElement("div", {
       className: "donate-amts"
-    }, DONATE_AMOUNTS.map(a => React.createElement("button", {
+    }, DONATE_AMOUNTS.map(a => /*#__PURE__*/React.createElement("button", {
       key: a,
       className: 'donate-amt' + (!other && sel === a ? ' is-on' : ''),
       disabled: busy,
@@ -917,16 +971,16 @@
         setSel(a);
         go(a);
       }
-    }, "$", a, freq === 'monthly' ? React.createElement("span", {
+    }, "$", a, freq === 'monthly' ? /*#__PURE__*/React.createElement("span", {
       className: "donate-per"
-    }, "/mo") : null)), React.createElement("button", {
+    }, "/mo") : null)), /*#__PURE__*/React.createElement("button", {
       className: 'donate-amt donate-amt--other' + (other ? ' is-on' : ''),
       onClick: () => setOther(true)
-    }, "Other")), other && React.createElement("div", {
+    }, "Other")), other && /*#__PURE__*/React.createElement("div", {
       className: "donate-custom"
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "donate-custom-sign"
-    }, "$"), React.createElement("input", {
+    }, "$"), /*#__PURE__*/React.createElement("input", {
       type: "number",
       min: "2",
       inputMode: "numeric",
@@ -936,14 +990,16 @@
       onKeyDown: e => {
         if (e.key === 'Enter') go(Number(custom));
       }
-    }), React.createElement(Button, {
+    }), /*#__PURE__*/React.createElement(Button, {
       variant: "donate",
       onClick: () => go(Number(custom)),
       disabled: busy
-    }, "Give", freq === 'monthly' ? ' monthly' : '', " \u2192")), React.createElement("p", {
+    }, "Give", freq === 'monthly' ? ' monthly' : '', " →")), /*#__PURE__*/React.createElement("p", {
       className: "donate-cardnote"
     }, busy ? 'Taking you to secure checkout…' : 'Stripe-secured · All amounts in AUD · Not tax-deductible.'))));
   }
+
+  /* ---------------- Post-donation monthly upsell ---------------- */
   function MonthlyUpsell({
     sessionId
   }) {
@@ -967,53 +1023,60 @@
         frequency: 'monthly'
       });
     };
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       className: "upsell"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container",
       style: {
         maxWidth: '720px'
       }
-    }, React.createElement("p", {
+    }, /*#__PURE__*/React.createElement("p", {
       className: "upsell-thanks"
-    }, "Thank you", amt ? ' — $' + amt + ' received' : '', ". Your receipt is on its way."), React.createElement("h1", {
+    }, "Thank you", amt ? ' — $' + amt + ' received' : '', ". Your receipt is on its way."), /*#__PURE__*/React.createElement("h1", {
       className: "upsell-head"
-    }, amt ? '$' + amt + ' helps today.' : 'Thank you.', " ", React.createElement("span", {
+    }, amt ? '$' + amt + ' helps today.' : 'Thank you.', " ", /*#__PURE__*/React.createElement("span", {
       className: "upsell-red"
-    }, "$", monthly, " a month keeps the pressure on.")), React.createElement("p", {
+    }, "$", monthly, " a month keeps the pressure on.")), /*#__PURE__*/React.createElement("p", {
       className: "upsell-sub"
-    }, "One-off gifts keep the lights on. Monthly backing changes what we can do:"), React.createElement("ul", {
+    }, "One-off gifts keep the lights on. Monthly backing changes what we can do:"), /*#__PURE__*/React.createElement("ul", {
       className: "upsell-list"
-    }, React.createElement("li", null, React.createElement("b", null, "We can plan ahead."), " Ads, research and polling are booked months out \u2014 steady funding lets us commit before the Government moves."), React.createElement("li", null, React.createElement("b", null, "They can't wait us out."), " A predictable, reliable base is the one thing a delay-and-outlast strategy can't beat."), React.createElement("li", null, React.createElement("b", null, "Small monthly beats big once."), " A year of $", monthly, "/month puts more pressure on Canberra than most one-off gifts \u2014 without you feeling it.")), React.createElement(Button, {
+    }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "We can plan ahead."), " Ads, research and polling are booked months out — steady funding lets us commit before the Government moves."), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "They can't wait us out."), " A predictable, reliable base is the one thing a delay-and-outlast strategy can't beat."), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("b", null, "Small monthly beats big once."), " A year of $", monthly, "/month puts more pressure on Canberra than most one-off gifts — without you feeling it.")), /*#__PURE__*/React.createElement(Button, {
       variant: "donate",
       size: "lg",
       fullWidth: true,
       onClick: upgrade,
       disabled: busy
-    }, busy ? 'One moment…' : 'Make it $' + monthly + '/month'), React.createElement("p", {
+    }, busy ? 'One moment…' : 'Make it $' + monthly + '/month'), /*#__PURE__*/React.createElement("p", {
       className: "upsell-fine"
-    }, "Cancel anytime with one email. Receipted monthly."), React.createElement("a", {
+    }, "Cancel anytime with one email. Receipted monthly."), /*#__PURE__*/React.createElement("a", {
       className: "upsell-skip",
       href: "share.html"
-    }, "No thanks \u2014 I'll share the petition with my mates instead \u2192")));
+    }, "No thanks — I'll share the petition with my mates instead →")));
   }
+
+  /* ---------------- Page header (interior pages) ---------------- */
   function PageHead({
     eyebrow,
     title,
     lead,
     dark
   }) {
-    return React.createElement("section", {
+    return /*#__PURE__*/React.createElement("section", {
       className: 'page-head' + (dark ? ' page-head--dark' : '')
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container"
-    }, React.createElement(Eyebrow, {
+    }, /*#__PURE__*/React.createElement(Eyebrow, {
       variant: dark ? 'light' : undefined
-    }, eyebrow), React.createElement("h1", null, title), lead && React.createElement("p", {
+    }, eyebrow), /*#__PURE__*/React.createElement("h1", null, title), lead && /*#__PURE__*/React.createElement("p", {
       className: "lead-p"
     }, lead)));
   }
-  const SP_NAMES = ['Sarah', 'James', 'Emma', 'Michael', 'Olivia', 'Liam', 'Chloe', 'Noah', 'Ava', 'Jack', 'Mia', 'William', 'Grace', 'Thomas', 'Ruby', 'Ethan', 'Sophie', 'Lucas', 'Charlotte', 'Henry', 'Isla', 'Oliver', 'Amelia', 'Harry', 'Zoe', 'Daniel', 'Hannah', 'Lachlan', 'Ella', 'Cooper'];
+
+  /* ---------------- Social-proof activity popup ----------------
+     Live "someone just signed / donated" toast. Real events (petition-signed /
+     donation-completed CustomEvents) take priority; a curated sample pool keeps
+     it alive on quiet pages. Renders nothing on /donate and /share. */
+  const SP_NAMES = ['Sarah', 'Mason', 'Emma', 'Michael', 'Olivia', 'Liam', 'Chloe', 'Noah', 'Ava', 'Jack', 'Mia', 'William', 'Grace', 'Thomas', 'Ruby', 'Ethan', 'Sophie', 'Lucas', 'Charlotte', 'Henry', 'Isla', 'Oliver', 'Amelia', 'Harry', 'Zoe', 'Daniel', 'Hannah', 'Lachlan', 'Ella', 'Cooper'];
   const SP_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
   const SP_AMOUNTS = [50, 75, 100, 150, 200];
   const spRand = a => a[Math.floor(Math.random() * a.length)];
@@ -1075,6 +1138,7 @@
       t.iv = setInterval(() => {
         if (!document.hidden) idle();
       }, 60000);
+      // expose so the /share purchase handler could fire one elsewhere if wanted
       return () => {
         window.removeEventListener('petition-signed', onSigned);
         window.removeEventListener('donation-completed', onDonated);
@@ -1094,40 +1158,42 @@
       setPhase('out');
       timers.current.unmount = setTimeout(() => setItem(null), 360);
     };
-    return React.createElement("a", {
+    return /*#__PURE__*/React.createElement("a", {
       className: 'ff-sp ff-sp--' + item.kind + ' ff-sp--' + phase,
       href: item.href,
       "aria-label": text
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "ff-sp-icon",
       "aria-hidden": "true"
-    }, isPet ? React.createElement(Star, {
+    }, isPet ? /*#__PURE__*/React.createElement(Star, {
       size: 16,
       color: "#fff"
-    }) : '♥'), React.createElement("span", {
+    }) : '♥'), /*#__PURE__*/React.createElement("span", {
       className: "ff-sp-body"
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       className: "ff-sp-text"
-    }, text), React.createElement("span", {
+    }, text), /*#__PURE__*/React.createElement("span", {
       className: "ff-sp-cta"
-    }, cta, " \u2192")), React.createElement("button", {
+    }, cta, " →")), /*#__PURE__*/React.createElement("button", {
       className: "ff-sp-close",
       "aria-label": "Dismiss",
       onClick: dismiss
-    }, "\xD7"));
+    }, "×"));
   }
+
+  /* ---------------- Footer ---------------- */
   function Footer() {
-    return React.createElement(React.Fragment, null, React.createElement(SocialProofPopup, null), React.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SocialProofPopup, null), /*#__PURE__*/React.createElement("div", {
       className: "foot-cta"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container foot-cta-inner"
-    }, React.createElement("h2", null, "Australia's future is worth a signature."), React.createElement(Button, {
+    }, /*#__PURE__*/React.createElement("h2", null, "Australia's future is worth a signature."), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
-    }, "Sign the petition"))), React.createElement("footer", {
+    }, "Sign the petition"))), /*#__PURE__*/React.createElement("footer", {
       className: "footer"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container",
       style: {
         display: 'flex',
@@ -1136,15 +1202,15 @@
         alignItems: 'center',
         justifyContent: 'space-between'
       }
-    }, React.createElement("a", {
+    }, /*#__PURE__*/React.createElement("a", {
       href: "index.html"
-    }, React.createElement("img", {
+    }, /*#__PURE__*/React.createElement("img", {
       src: A + 'logo-full.png',
       alt: "Fair Migration",
       style: {
         height: '52px'
       }
-    })), React.createElement("nav", {
+    })), /*#__PURE__*/React.createElement("nav", {
       style: {
         display: 'flex',
         gap: '24px',
@@ -1153,39 +1219,41 @@
         whiteSpace: 'nowrap',
         flexWrap: 'wrap'
       }
-    }, React.createElement("a", {
+    }, /*#__PURE__*/React.createElement("a", {
       href: "problem.html"
-    }, "The problem"), React.createElement("a", {
+    }, "The problem"), /*#__PURE__*/React.createElement("a", {
       href: "map.html"
-    }, "Impact map"), React.createElement("a", {
+    }, "Impact map"), /*#__PURE__*/React.createElement("a", {
       href: "petition.html"
-    }, "Sign"), React.createElement("a", {
+    }, "Sign"), /*#__PURE__*/React.createElement("a", {
       href: "donate.html"
-    }, "Donate"), React.createElement("a", {
+    }, "Donate"), /*#__PURE__*/React.createElement("a", {
+      href: "about.html"
+    }, "About"), /*#__PURE__*/React.createElement("a", {
       href: "#"
-    }, "Privacy Policy")), React.createElement("div", {
+    }, "Privacy Policy")), /*#__PURE__*/React.createElement("div", {
       className: "social",
       style: {
         fontSize: '13px',
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, React.createElement("a", {
+    }, /*#__PURE__*/React.createElement("a", {
       href: "#"
-    }, "Twitter"), React.createElement("a", {
+    }, "Twitter"), /*#__PURE__*/React.createElement("a", {
       href: "#"
-    }, "Facebook"), React.createElement("a", {
+    }, "Facebook"), /*#__PURE__*/React.createElement("a", {
       href: "#"
-    }, "Instagram"), React.createElement("a", {
+    }, "Instagram"), /*#__PURE__*/React.createElement("a", {
       href: "#"
-    }, "YouTube"))), React.createElement("div", {
+    }, "YouTube"))), /*#__PURE__*/React.createElement("div", {
       className: "container",
       style: {
         marginTop: '24px',
         fontSize: '12px',
         color: 'var(--ink-400)'
       }
-    }, "\xA9 2026 Fair Migration. All rights reserved. \xB7 Map figures shown are sample data for demonstration.")));
+    }, "© 2026 Fair Migration. All rights reserved. · Map figures shown are sample data for demonstration.")));
   }
   window.FM = {
     A,
@@ -1216,6 +1284,8 @@
     PageHead,
     Footer
   };
+
+  // Run once per page load (browser only): persist attribution + fire the ?ref= beacon.
   if (typeof window !== 'undefined' && window.document) {
     captureAttribution();
     shareClickBeacon();

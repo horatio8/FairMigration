@@ -111,6 +111,15 @@
     const a = getAttr();
     const uc = a.utm_content;
     const sms_variant = uc === 'ben' ? 'A' : uc === 'issue' ? 'B' : undefined;
+    // Meta funnel: signal checkout intent (Purchase fires later, deduped on the Stripe session id)
+    if (window.fbq) {
+      try {
+        window.fbq('track', 'InitiateCheckout', {
+          value: Number(amount) || 0, currency: 'AUD', content_name: 'FairMigration',
+          content_category: frequency === 'monthly' ? 'monthly' : 'oneoff',
+        });
+      } catch (e) {}
+    }
     const body = {
       amount, frequency, email: safeGet('ff_email') || undefined,
       slug: CFG.petitionSlug, ref: a.ref || safeGet('ff_referral_code') || undefined,
@@ -547,7 +556,7 @@
      Live "someone just signed / donated" toast. Real events (petition-signed /
      donation-completed CustomEvents) take priority; a curated sample pool keeps
      it alive on quiet pages. Renders nothing on /donate and /share. */
-  const SP_NAMES = ['Sarah', 'James', 'Emma', 'Michael', 'Olivia', 'Liam', 'Chloe', 'Noah', 'Ava', 'Jack',
+  const SP_NAMES = ['Sarah', 'Mason', 'Emma', 'Michael', 'Olivia', 'Liam', 'Chloe', 'Noah', 'Ava', 'Jack',
     'Mia', 'William', 'Grace', 'Thomas', 'Ruby', 'Ethan', 'Sophie', 'Lucas', 'Charlotte', 'Henry',
     'Isla', 'Oliver', 'Amelia', 'Harry', 'Zoe', 'Daniel', 'Hannah', 'Lachlan', 'Ella', 'Cooper'];
   const SP_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
@@ -621,6 +630,7 @@
               <a href="map.html">Impact map</a>
               <a href="petition.html">Sign</a>
               <a href="donate.html">Donate</a>
+              <a href="about.html">About</a>
               <a href="#">Privacy Policy</a>
             </nav>
             <div className="social" style={{ fontSize: '13px', color: 'var(--ink-500)', fontWeight: 600 }}>

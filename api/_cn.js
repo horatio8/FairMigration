@@ -53,4 +53,28 @@ async function pushReceiver(slug, data) {
   } catch (e) { return { error: String(e.message || e) }; }
 }
 
-module.exports = { configured, matchProfile, enrolAutomation, pushReceiver, receiverUrlFor };
+// Campaign Nucleus form receiver — accepts a form-encoded POST and maps the
+// standard fields (first_name, last_name, email, phone, message). Petition
+// signatures are pushed here so CN owns the list + downstream automations.
+const PETITION_RECEIVER_URL = process.env.CN_PETITION_RECEIVER_URL
+  || 'https://teller.campaignnucleus.com/forms/receiver/27bb41c3-6ec6-40e8-94b0-aede53760830';
+
+async function pushPetitionReceiver({ first_name, last_name, email, phone, message }) {
+  if (!email && !phone) return { skipped: 'no_identity' };
+  const params = new URLSearchParams();
+  if (first_name) params.set('first_name', first_name);
+  if (last_name) params.set('last_name', last_name);
+  if (email) params.set('email', email);
+  if (phone) params.set('phone', phone);
+  if (message) params.set('message', message);
+  try {
+    const res = await fetch(PETITION_RECEIVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+    return { ok: res.ok, status: res.status };
+  } catch (e) { return { error: String(e.message || e) }; }
+}
+
+module.exports = { configured, matchProfile, enrolAutomation, pushReceiver, receiverUrlFor, pushPetitionReceiver };

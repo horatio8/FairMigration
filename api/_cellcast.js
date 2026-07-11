@@ -15,7 +15,7 @@ const ORIGIN = process.env.PRODUCTION_ORIGIN || 'https://fairmigration.vote';
 /* ---------- templates (edit copy freely; contract is {first},{link}) ---------- */
 const TEMPLATES = {
   signup_ab: {
-    A: ({ first, link }) => `${first}, James from Fair Migration. Thanks for signing. Chip in to keep the pressure on Canberra: ${link}`,
+    A: ({ first, link }) => `${first}, it's FairMigration. Thanks for signing. Chip in to keep the pressure on Canberra: ${link}`,
     B: ({ first, link }) => `${first}, mass migration is driving up your rent and gridlocking your city. Help Fair Migration make Canberra listen: ${link}`,
   },
   donation_lapse_24h: () => ({ first, link }) => `${first}, you were one click from backing fair migration yesterday. Finish what you started: ${link}`,

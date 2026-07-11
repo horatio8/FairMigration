@@ -6,6 +6,7 @@ const AT = require('./_airtable');
 const OPS = require('./_ops');
 const meta = require('./_meta');
 const cellcast = require('./_cellcast');
+const cn = require('./_cn');
 
 module.exports = async (req, res) => {
   if (applyCors(req, res)) return;
@@ -58,6 +59,12 @@ module.exports = async (req, res) => {
 
     // A/B-tested thank-you SMS (no-op unless Cellcast configured)
     cellcast.enqueueSignupSMS({ id: contact.id, fields: Object.assign({}, contact.fields, { referral_code }) }).catch(() => {});
+
+    // Push the signature to the Campaign Nucleus form receiver (fire-and-forget)
+    cn.pushPetitionReceiver({
+      first_name, last_name, email: AT.normEmail(email), phone: AT.normPhoneAU(mobile),
+      message: body.message || 'Signed the Fair Migration petition',
+    }).catch(() => {});
 
     return send(res, 200, { success: true, contact_id: contact.contact_id, referral_code, meta_event_id, is_new_contact: contact.isNew });
   } catch (err) {

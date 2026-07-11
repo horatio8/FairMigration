@@ -8,16 +8,18 @@ const AT = require('./_airtable');
 const OPS = require('./_ops');
 
 const ORG = 'Fair Migration';
+// Single Stripe Product ("FairMigration") referenced on every charge so all
+// donations roll up under one product in the dashboard. Overridable via env.
+const PRODUCT_ID = process.env.STRIPE_PRODUCT_ID || 'prod_UrkGRTJxgE7rsz';
 
 function buildSessionForm({ amount, frequency, email, slug, ref, contact_id, sms_variant, utm, origin }) {
   const cents = Math.round(Number(amount) * 100);
   const monthly = frequency === 'monthly';
-  // One product ("FairMigration") on every transaction so they're trackable in Stripe.
-  const price_data = {
-    currency: 'aud',
-    product_data: { name: 'FairMigration', description: monthly ? 'FairMigration — monthly donation' : 'FairMigration — donation' },
-    unit_amount: cents,
-  };
+  // Reference the one "FairMigration" product; fall back to inline product_data
+  // if no product id is configured (keeps checkout working out of the box).
+  const price_data = { currency: 'aud', unit_amount: cents };
+  if (PRODUCT_ID) price_data.product = PRODUCT_ID;
+  else price_data.product_data = { name: 'FairMigration', description: monthly ? 'FairMigration — monthly donation' : 'FairMigration — donation' };
   if (monthly) price_data.recurring = { interval: 'month' };
   const metadata = { org: ORG, frequency: frequency || 'oneoff', content_name: 'FairMigration', source_url: origin };
   if (ref) metadata.ref = ref;
