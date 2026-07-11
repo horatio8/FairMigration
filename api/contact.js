@@ -27,20 +27,17 @@ module.exports = async (req, res) => {
       phone: AT.normPhoneAU ? AT.normPhoneAU(phone) : phone, message: message.slice(0, 250),
     });
 
-    // Best-effort: capture the enquirer as a contact + log the message (never blocks the response).
+    // Capture the enquiry in Airtable as a Contact Enquiry event (awaited so it
+    // persists on Vercel). Logged as an event only — not a Contact — so it never
+    // inflates the signature counter or creates spurious supporter records.
     if (AT.configured && AT.configured()) {
-      (async () => {
-        try {
-          const contact = await AT.matchOrCreateContact(
-            { first_name, last_name, email, mobile: phone },
-            { first_source_channel: 'Contact Form' }
-          );
-          await AT.logEvent({
-            event_type: 'Contact Enquiry', contactId: contact.id,
-            payload: { first_name, last_name, email, phone, message }, source_channel: 'Direct',
-          });
-        } catch (e) {}
-      })();
+      try {
+        await AT.logEvent({
+          event_type: 'Contact Enquiry',
+          payload: { first_name, last_name, email, phone, message },
+          source_channel: 'Direct',
+        });
+      } catch (e) {}
     }
 
     return send(res, 200, { success: true, cn: cnResult && (cnResult.ok || cnResult.skipped) ? 'ok' : 'error' });
