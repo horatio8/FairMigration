@@ -19,7 +19,7 @@
 
   function shareUrlFor(code) { return CFG.origin + '/petition?ref=' + encodeURIComponent(code); }
   function shareText(count) {
-    return 'I just signed the Fair Migration petition — ' + (count || '48,000+') +
+    return 'I just signed the Fair Migration petition — ' + (count || 'thousands of') +
       ' Australians are demanding our government put Australians first. Add your name:';
   }
   function getShared() { try { return JSON.parse(localStorage.getItem('ff_shared_platforms') || '[]'); } catch (e) { return []; } }

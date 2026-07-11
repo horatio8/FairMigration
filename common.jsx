@@ -28,6 +28,10 @@
     origin: 'https://fairmigration.vote',
     petitionSlug: 'fair-migration',
     stripePaymentLink: '',     // paste the Stripe Payment Link URL to enable real donations
+    // Placeholder shown for the split-second before the real count loads. The real
+    // number (actual signatures + the SIGNATURE_BASE_OFFSET buffer set in Vercel)
+    // comes from /api/signature-count; this only avoids a flash of an empty value.
+    signatureFallback: 69500,
   }, window.FM_CONFIG || {});
 
   /* ---------- attribution capture (sessionStorage) + share-click beacon ---------- */
@@ -93,14 +97,22 @@
     try { const u = new URL(url); u.searchParams.set('client_reference_id', String(slug)); return u.toString(); } catch (e) { return url; }
   }
 
-  /* live, drifting signature count (shared starting point across pages) */
+  /* Real signature count: actual signatures + the SIGNATURE_BASE_OFFSET buffer,
+     served by /api/signature-count. No artificial drift — the number only moves
+     as real people sign. Seeds from a cached/last value to avoid a load flash,
+     then refreshes periodically so it stays live. */
   function useLiveCount() {
-    const [count, setCount] = useState(48217 + (safeGet('fm_signed') === '1' ? 1 : 0));
+    const cached = parseInt(safeGet('fm_sig_count') || '0', 10);
+    const seed = (cached > 0 ? cached : CFG.signatureFallback) + (safeGet('fm_signed') === '1' ? 1 : 0);
+    const [count, setCount] = useState(seed);
     useEffect(() => {
       let live = true;
-      // prefer the real server counter when the backend is deployed
-      fetch('/api/signature-count').then((r) => (r.ok ? r.json() : null)).then((j) => { if (live && j && j.count) setCount(j.count); }).catch(() => {});
-      const id = setInterval(() => setCount((c) => c + (Math.random() < 0.6 ? 1 : 0)), 4200);
+      const load = () => fetch('/api/signature-count')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => { if (live && j && typeof j.count === 'number') { setCount(j.count); safeSet('fm_sig_count', String(j.count)); } })
+        .catch(() => {});
+      load();
+      const id = setInterval(load, 30000); // re-read the real count; never fabricate
       return () => { live = false; clearInterval(id); };
     }, []);
     return [count, setCount];
@@ -188,7 +200,7 @@
           <div className="util-inner">
             <span className="util-count">
               <img className="tick-star" src={A + 'favicon-white.png'} alt="" style={{ width: 14, height: 14 }} />
-              <b>{fmt(count != null ? count : 48217)}</b>&nbsp;Australians have signed ·{' '}
+              <b>{fmt(count != null ? count : CFG.signatureFallback)}</b>&nbsp;Australians have signed ·{' '}
               <a href="petition.html">Add your name</a>
             </span>
           </div>

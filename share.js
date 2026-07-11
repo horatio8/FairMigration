@@ -1,4 +1,5 @@
-"use strict";
+/* Fair Migration — /share thank-you + referral page.
+   Three states: polling (post-donation), ask_identity (unknown), ready (share). */
 
 (function () {
   const {
@@ -50,7 +51,7 @@
     return CFG.origin + '/petition?ref=' + encodeURIComponent(code);
   }
   function shareText(count) {
-    return 'I just signed the Fair Migration petition — ' + (count || '48,000+') + ' Australians are demanding our government put Australians first. Add your name:';
+    return 'I just signed the Fair Migration petition — ' + (count || 'thousands of') + ' Australians are demanding our government put Australians first. Add your name:';
   }
   function getShared() {
     try {
@@ -59,6 +60,8 @@
       return [];
     }
   }
+
+  // browser Purchase — same event_id the Stripe webhook used (stripe_<session_id>) so Meta dedups
   function firePixelPurchase(sessionId) {
     if (!window.fbq || !sessionId) return;
     const key = 'ff_pixel_purchase_' + sessionId;
@@ -127,18 +130,18 @@
       }
       window.open(href, '_blank', 'noopener');
     }
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "share-btns"
-    }, PLATFORMS.map(p => React.createElement("button", {
+    }, PLATFORMS.map(p => /*#__PURE__*/React.createElement("button", {
       key: p.id,
       className: 'share-btn' + (used.includes(p.id) ? ' is-used' : ''),
       style: {
         background: p.bg
       },
       onClick: () => open(p.id)
-    }, React.createElement("span", null, p.id === 'copy' && copied ? 'Copied!' : p.label), used.includes(p.id) && React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, p.id === 'copy' && copied ? 'Copied!' : p.label), used.includes(p.id) && /*#__PURE__*/React.createElement("span", {
       className: "share-tick"
-    }, "\u2713"))));
+    }, "✓"))));
   }
   function AskIdentity({
     onReady
@@ -204,16 +207,16 @@
         email: 'Something went wrong — please try again'
       });
     };
-    return React.createElement("form", {
+    return /*#__PURE__*/React.createElement("form", {
       className: "pform",
       onSubmit: submit,
       noValidate: true,
       style: {
         maxWidth: '460px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "pform-grid2"
-    }, React.createElement(Input, {
+    }, /*#__PURE__*/React.createElement(Input, {
       label: "First name *",
       name: "firstName",
       placeholder: "Jane",
@@ -221,7 +224,7 @@
       onChange: set('firstName'),
       invalid: !!err.firstName,
       hint: err.firstName
-    }), React.createElement(Input, {
+    }), /*#__PURE__*/React.createElement(Input, {
       label: "Last name *",
       name: "lastName",
       placeholder: "Citizen",
@@ -229,7 +232,7 @@
       onChange: set('lastName'),
       invalid: !!err.lastName,
       hint: err.lastName
-    })), React.createElement(Input, {
+    })), /*#__PURE__*/React.createElement(Input, {
       label: "Email *",
       type: "email",
       name: "email",
@@ -238,14 +241,14 @@
       onChange: set('email'),
       invalid: !!err.email,
       hint: err.email
-    }), React.createElement(Input, {
+    }), /*#__PURE__*/React.createElement(Input, {
       label: "Mobile phone",
       type: "tel",
       name: "mobile",
       placeholder: "0400 000 000",
       value: d.mobile,
       onChange: set('mobile')
-    }), React.createElement(Input, {
+    }), /*#__PURE__*/React.createElement(Input, {
       label: "Postcode",
       name: "postcode",
       placeholder: "2000",
@@ -253,7 +256,7 @@
       onChange: set('postcode'),
       inputMode: "numeric",
       maxLength: 4
-    }), React.createElement(Button, {
+    }), /*#__PURE__*/React.createElement(Button, {
       type: "submit",
       variant: "primary",
       size: "lg",
@@ -264,7 +267,7 @@
   function ShareApp() {
     const [count] = useLiveCount();
     const [state, setState] = useState('loading');
-    const [ctx, setCtx] = useState(null);
+    const [ctx, setCtx] = useState(null); // { referral_code, first_name }
     const pollRef = useRef(0);
     function ready(c) {
       setCtx(c);
@@ -307,49 +310,49 @@
       setState('ask');
     }, []);
     const first = ctx && ctx.first_name ? ctx.first_name : 'friend';
-    return React.createElement("div", null, React.createElement(SiteNav, {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "share",
       count: count
-    }), React.createElement(PageHead, {
+    }), /*#__PURE__*/React.createElement(PageHead, {
       eyebrow: "Thank you",
       title: state === 'ready' ? 'Thank you, ' + first + '.' : 'Thank you for standing up.',
-      lead: "Every share brings more Australians to the cause. Send your link \u2014 the petition you signed becomes their landing page."
-    }), React.createElement("section", {
+      lead: "Every share brings more Australians to the cause. Send your link — the petition you signed becomes their landing page."
+    }), /*#__PURE__*/React.createElement("section", {
       className: "section"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "container",
       style: {
         maxWidth: '620px'
       }
-    }, state === 'loading' && React.createElement("p", {
+    }, state === 'loading' && /*#__PURE__*/React.createElement("p", {
       className: "body-p"
-    }, "Loading\u2026"), state === 'polling' && React.createElement("div", null, React.createElement("p", {
+    }, "Loading…"), state === 'polling' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "lead-p",
       style: {
         marginTop: 0
       }
-    }, "Confirming your donation\u2026"), React.createElement("p", {
+    }, "Confirming your donation…"), /*#__PURE__*/React.createElement("p", {
       className: "body-p"
-    }, "This takes a few seconds while we finalise your receipt. Your share link will appear automatically."), React.createElement("div", {
+    }, "This takes a few seconds while we finalise your receipt. Your share link will appear automatically."), /*#__PURE__*/React.createElement("div", {
       className: "share-spinner"
-    })), state === 'ask' && React.createElement("div", null, React.createElement("p", {
+    })), state === 'ask' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "body-p",
       style: {
         marginTop: 0
       }
-    }, "Pop your details in and we'll generate your personal share link \u2014 every person who signs through it is credited to you."), React.createElement(AskIdentity, {
+    }, "Pop your details in and we'll generate your personal share link — every person who signs through it is credited to you."), /*#__PURE__*/React.createElement(AskIdentity, {
       onReady: ready
-    })), state === 'ready' && ctx && ctx.referral_code && React.createElement("div", null, React.createElement("p", {
+    })), state === 'ready' && ctx && ctx.referral_code && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "body-p",
       style: {
         marginTop: 0
       }
-    }, "Share your personal link. Sign-throughs and donations from people you bring in are tracked back to you."), React.createElement("div", {
+    }, "Share your personal link. Sign-throughs and donations from people you bring in are tracked back to you."), /*#__PURE__*/React.createElement("div", {
       className: "share-link"
-    }, React.createElement("code", null, shareUrlFor(ctx.referral_code))), React.createElement(ShareButtons, {
+    }, /*#__PURE__*/React.createElement("code", null, shareUrlFor(ctx.referral_code))), /*#__PURE__*/React.createElement(ShareButtons, {
       code: ctx.referral_code,
       count: count.toLocaleString()
-    })))), React.createElement(Footer, null));
+    })))), /*#__PURE__*/React.createElement(Footer, null));
   }
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ShareApp, null));
+  ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(ShareApp, null));
 })();
