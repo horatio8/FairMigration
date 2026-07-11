@@ -49,7 +49,7 @@
     // Placeholder shown for the split-second before the real count loads. The real
     // number (actual signatures + the SIGNATURE_BASE_OFFSET buffer set in Vercel)
     // comes from /api/signature-count; this only avoids a flash of an empty value.
-    signatureFallback: 69500
+    signatureFallback: 1800
   }, window.FM_CONFIG || {});
 
   /* ---------- attribution capture (sessionStorage) + share-click beacon ---------- */
@@ -793,6 +793,44 @@
   }
 
   /* ---------------- Petition section (argument + goal + form) ---------------- */
+  function CheckIcon() {
+    return /*#__PURE__*/React.createElement("svg", {
+      width: "15",
+      height: "15",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "#fff",
+      strokeWidth: "3.2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M20 6 9 17l-5-5"
+    }));
+  }
+  const DEMANDS = [{
+    h: 'An immediate reduction in the migration intake',
+    p: 'Bring numbers back to a level our housing, hospitals and infrastructure can actually sustain.'
+  }, {
+    h: 'A full review of a broken system',
+    p: 'An honest, independent audit of a migration policy that has been left unchecked for years.'
+  }, {
+    h: 'Australians first — always',
+    p: 'A system run in the interests of the Australians who built this country and pay for its services.'
+  }];
+  const WHY_POINTS = [{
+    h: "A roof over your family's head",
+    p: 'Runaway demand has pushed home ownership out of reach and rents to record highs. Australians should be able to afford to live in their own country.'
+  }, {
+    h: "The services you've paid for",
+    p: "You've funded our hospitals, roads and schools your whole working life — they should serve you first, not buckle under numbers they were never built for."
+  }, {
+    h: 'Wages that keep up with life',
+    p: 'An endless supply of cheap overseas labour holds down the pay of working Australians. Fair migration means a fair go at work.'
+  }, {
+    h: "A say in your country's future",
+    p: 'Australians were never asked whether they wanted record migration. It is time our leaders listened to the people they serve.'
+  }];
   function PetitionSection({
     count,
     signed,
@@ -821,15 +859,46 @@
       className: "h2-display"
     }, "Sign the petition")), /*#__PURE__*/React.createElement("div", {
       className: "petition-grid"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("blockquote", {
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "petition-copy"
+    }, /*#__PURE__*/React.createElement("blockquote", {
       className: "petition-quote"
-    }, /*#__PURE__*/React.createElement("p", {
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "petition-quote-head"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "pq-star"
+    }, /*#__PURE__*/React.createElement(Star, {
+      size: 17,
+      color: "#fff"
+    })), /*#__PURE__*/React.createElement("span", {
+      className: "pq-label"
+    }, "Our petition to Canberra")), /*#__PURE__*/React.createElement("p", {
       className: "petition-quote-lead"
-    }, "We call for an immediate overhaul of Australia's migration policies so that it works in ", /*#__PURE__*/React.createElement("span", {
+    }, "We call for an immediate overhaul of Australia's migration policies so that they work in ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, "OUR"), " best interests:"), /*#__PURE__*/React.createElement("ol", {
-      className: "petition-demands"
-    }, /*#__PURE__*/React.createElement("li", null, "An immediate reduction in the migration intake."), /*#__PURE__*/React.createElement("li", null, "A full review of broken, unsustainable migration policy."), /*#__PURE__*/React.createElement("li", null, "A system run in the interests of Australians first.")))), /*#__PURE__*/React.createElement("div", {
+    }, "our"), " best interests:"), /*#__PURE__*/React.createElement("ol", {
+      className: "demand-list"
+    }, DEMANDS.map((d, i) => /*#__PURE__*/React.createElement("li", {
+      className: "demand-item",
+      key: i
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "demand-num"
+    }, i + 1), /*#__PURE__*/React.createElement("div", {
+      className: "demand-body"
+    }, /*#__PURE__*/React.createElement("h4", null, d.h), /*#__PURE__*/React.createElement("p", null, d.p)))))), /*#__PURE__*/React.createElement("div", {
+      className: "why-fair"
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "why-fair-title"
+    }, "Why Australians deserve fair migration"), /*#__PURE__*/React.createElement("p", {
+      className: "why-fair-intro"
+    }, "This isn't about shutting the door — it's about a fair go for the people who call Australia home."), /*#__PURE__*/React.createElement("ul", {
+      className: "why-list"
+    }, WHY_POINTS.map((w, i) => /*#__PURE__*/React.createElement("li", {
+      className: "why-item",
+      key: i
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "why-ic"
+    }, /*#__PURE__*/React.createElement(CheckIcon, null)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", null, w.h), /*#__PURE__*/React.createElement("p", null, w.p))))))), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'sticky',
         top: '120px'
