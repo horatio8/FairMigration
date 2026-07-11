@@ -88,7 +88,9 @@ module.exports = async (req, res) => {
     });
 
     if (!duplicate) {
-      meta.sendEvent({
+      // Awaited before responding — Vercel freezes the function on response, which
+      // would otherwise kill the in-flight CAPI request (see petition-signup.js).
+      const metaP = meta.sendEvent({
         event_name: 'Purchase', event_id: meta_event_id,
         user: { email: cust.email, phone: cust.phone, first_name: contact.fields.first_name, last_name: contact.fields.last_name,
           postcode: cust.postcode, country: cust.country || 'AU', external_id: contact.contact_id, ip: '', ua: '' },
@@ -98,11 +100,12 @@ module.exports = async (req, res) => {
       // close the lapse row, credit the referrer, and roll up A/B revenue
       const md = obj.metadata || {};
       try { const lp = await OPS.findPendingLapse({ session_id: obj.id }); if (lp) await OPS.updateLapse(lp.id, { status: 'completed', triggered_at: AT.nowISO() }); } catch (e) {}
-      if (md.ref) OPS.upsertRollup(String(md.ref).toUpperCase(), { donations: 1, dollars: amount_cents / 100 }).catch(() => {});
+      if (md.ref) await OPS.upsertRollup(String(md.ref).toUpperCase(), { donations: 1, dollars: amount_cents / 100 }).catch(() => {});
       if (md.sms_variant === 'A' || md.sms_variant === 'B') {
         const day = AT.nowISO().slice(0, 10);
-        OPS.upsertAbDaily(day, 'sms_signup', md.sms_variant, { gifts: 1, revenue: amount_cents / 100 }).catch(() => {});
+        await OPS.upsertAbDaily(day, 'sms_signup', md.sms_variant, { gifts: 1, revenue: amount_cents / 100 }).catch(() => {});
       }
+      await metaP;
     }
 
     return send(res, 200, { received: true, duplicate });

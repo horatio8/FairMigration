@@ -50,23 +50,30 @@ module.exports = async (req, res) => {
       curated: { payload, timestamp: AT.nowISO() },
     });
 
-    meta.sendEvent({
+    // Fan out to Meta CAPI, Cellcast and Campaign Nucleus. These MUST be awaited:
+    // on Vercel the function is frozen once the response is sent, so fire-and-forget
+    // work (e.g. the CAPI HTTPS request) would be killed before it completes.
+    const metaResultP = meta.sendEvent({
       event_name: 'Lead', event_id: meta_event_id, event_source_url: body.source_url || body.landing_url,
       user: { email, phone: mobile, first_name, last_name, postcode, country: 'Australia',
         external_id: contact.contact_id, fbp, fbclid, ip: clientIp(req), ua: req.headers['user-agent'] },
       custom_data: { content_name: body.content_name || 'Petition' },
-    }).catch(() => {});
+    }).catch((e) => ({ error: String(e.message || e) }));
 
     // A/B-tested thank-you SMS (no-op unless Cellcast configured)
-    cellcast.enqueueSignupSMS({ id: contact.id, fields: Object.assign({}, contact.fields, { referral_code }) }).catch(() => {});
+    const smsP = cellcast.enqueueSignupSMS({ id: contact.id, fields: Object.assign({}, contact.fields, { referral_code }) }).catch(() => {});
 
-    // Push the signature to the Campaign Nucleus form receiver (fire-and-forget)
-    cn.pushPetitionReceiver({
+    // Push the signature to the Campaign Nucleus form receiver
+    const cnP = cn.pushPetitionReceiver({
       first_name, last_name, email: AT.normEmail(email), phone: AT.normPhoneAU(mobile),
       message: body.message || 'Signed the Fair Migration petition',
-    }).catch(() => {});
+    }).catch((e) => ({ error: String(e.message || e) }));
 
-    return send(res, 200, { success: true, contact_id: contact.contact_id, referral_code, meta_event_id, is_new_contact: contact.isNew });
+    const [metaResult] = await Promise.all([metaResultP, smsP, cnP]);
+
+    const out = { success: true, contact_id: contact.contact_id, referral_code, meta_event_id, is_new_contact: contact.isNew };
+    if (body.debug) out.meta = metaResult; // diagnostic echo of the CAPI response
+    return send(res, 200, out);
   } catch (err) {
     return send(res, 500, { error: String(err.message || err) });
   }
