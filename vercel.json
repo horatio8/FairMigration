@@ -6,6 +6,7 @@
     { "source": "/donate", "destination": "/donate.html" },
     { "source": "/share", "destination": "/share.html" },
     { "source": "/about", "destination": "/about.html" },
+    { "source": "/contact", "destination": "/contact.html" },
     { "source": "/fund", "destination": "/api/track-redirect?l=fund" },
     { "source": "/fight", "destination": "/api/track-redirect?l=fight" },
     { "source": "/leaderboard", "destination": "/api/leaderboard" }

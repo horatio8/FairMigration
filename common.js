@@ -1230,6 +1230,8 @@
     }, "Donate"), /*#__PURE__*/React.createElement("a", {
       href: "about.html"
     }, "About"), /*#__PURE__*/React.createElement("a", {
+      href: "contact.html"
+    }, "Contact"), /*#__PURE__*/React.createElement("a", {
       href: "#"
     }, "Privacy Policy")), /*#__PURE__*/React.createElement("div", {
       className: "social",

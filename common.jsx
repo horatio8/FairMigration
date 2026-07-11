@@ -631,6 +631,7 @@
               <a href="petition.html">Sign</a>
               <a href="donate.html">Donate</a>
               <a href="about.html">About</a>
+              <a href="contact.html">Contact</a>
               <a href="#">Privacy Policy</a>
             </nav>
             <div className="social" style={{ fontSize: '13px', color: 'var(--ink-500)', fontWeight: 600 }}>

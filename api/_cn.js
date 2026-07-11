@@ -53,13 +53,15 @@ async function pushReceiver(slug, data) {
   } catch (e) { return { error: String(e.message || e) }; }
 }
 
-// Campaign Nucleus form receiver — accepts a form-encoded POST and maps the
-// standard fields (first_name, last_name, email, phone, message). Petition
-// signatures are pushed here so CN owns the list + downstream automations.
+// Campaign Nucleus form receivers — accept a form-encoded POST mapping the
+// standard field handles (first_name, last_name, email, phone, message).
 const PETITION_RECEIVER_URL = process.env.CN_PETITION_RECEIVER_URL
   || 'https://teller.campaignnucleus.com/forms/receiver/27bb41c3-6ec6-40e8-94b0-aede53760830';
+const CONTACT_RECEIVER_URL = process.env.CN_CONTACT_RECEIVER_URL
+  || 'https://teller.campaignnucleus.com/forms/receiver/5b5610db-ad0c-4151-b03a-276df05d4b5b';
 
-async function pushPetitionReceiver({ first_name, last_name, email, phone, message }) {
+async function postFormReceiver(url, { first_name, last_name, email, phone, message }) {
+  if (!url) return { skipped: 'no_url' };
   if (!email && !phone) return { skipped: 'no_identity' };
   const params = new URLSearchParams();
   if (first_name) params.set('first_name', first_name);
@@ -68,7 +70,7 @@ async function pushPetitionReceiver({ first_name, last_name, email, phone, messa
   if (phone) params.set('phone', phone);
   if (message) params.set('message', message);
   try {
-    const res = await fetch(PETITION_RECEIVER_URL, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
@@ -77,4 +79,9 @@ async function pushPetitionReceiver({ first_name, last_name, email, phone, messa
   } catch (e) { return { error: String(e.message || e) }; }
 }
 
-module.exports = { configured, matchProfile, enrolAutomation, pushReceiver, receiverUrlFor, pushPetitionReceiver };
+// Petition signatures push here so CN owns the list + downstream automations.
+function pushPetitionReceiver(fields) { return postFormReceiver(PETITION_RECEIVER_URL, fields); }
+// Contact-us enquiries push to their own receiver form.
+function pushContactReceiver(fields) { return postFormReceiver(CONTACT_RECEIVER_URL, fields); }
+
+module.exports = { configured, matchProfile, enrolAutomation, pushReceiver, receiverUrlFor, postFormReceiver, pushPetitionReceiver, pushContactReceiver };
