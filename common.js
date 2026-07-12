@@ -1043,7 +1043,7 @@
       className: "donate-head"
     }, "They spend ", /*#__PURE__*/React.createElement("span", {
       className: "donate-billions"
-    }, "billions"), " selling the immigration crisis. Only you can help."), /*#__PURE__*/React.createElement("p", {
+    }, "billions"), " selling the immigration crisis. Only you can help beat it."), /*#__PURE__*/React.createElement("p", {
       className: "donate-copy"
     }, "Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar puts the truth about immigration in front of more voters: ads, research, and organising on the ground."), /*#__PURE__*/React.createElement("ul", {
       className: "donate-impact"

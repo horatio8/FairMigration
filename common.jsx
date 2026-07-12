@@ -534,7 +534,7 @@
         <div className="container container--wide donate-grid">
           <div className="donate-msg">
             <Eyebrow variant="light">Donate</Eyebrow>
-            <h1 className="donate-head">They spend <span className="donate-billions">billions</span> selling the immigration crisis. Only you can help.</h1>
+            <h1 className="donate-head">They spend <span className="donate-billions">billions</span> selling the immigration crisis. Only you can help beat it.</h1>
             <p className="donate-copy">
               Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar
               puts the truth about immigration in front of more voters: ads, research, and organising on the ground.
