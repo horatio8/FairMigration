@@ -278,8 +278,8 @@ section[id] { scroll-margin-top: 116px; }
   background: linear-gradient(90deg, var(--red-500), var(--coral-400)); }
 .sigbar-goal-flag { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 900;
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--coral-400); margin-bottom: 6px; }
-.sigbar-goal-num { font-size: clamp(60px, 13vw, 132px); font-weight: 900; letter-spacing: -0.04em;
-  line-height: 0.88; color: #fff; text-shadow: 0 2px 30px rgba(0,0,0,.25); }
+.sigbar-goal-num { font-size: clamp(56px, 12vw, 124px); font-weight: 900; letter-spacing: -0.04em;
+  line-height: 0.9; color: #fff; text-transform: uppercase; text-shadow: 0 2px 30px rgba(0,0,0,.25); }
 .sigbar-goal-word { font-size: clamp(15px, 2.4vw, 24px); font-weight: 800; letter-spacing: 0.24em;
   text-transform: uppercase; color: rgba(255,255,255,.72); margin-top: 8px; }
 .sigbar-goal-sub { max-width: 660px; margin: 18px auto 0; font-size: clamp(15px, 1.9vw, 19px);

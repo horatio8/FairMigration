@@ -258,9 +258,9 @@
         <div className="sigbar-goal">
           <div className="container container--wide">
             <div className="sigbar-goal-flag"><Star size={15} color="#fff" /> Our goal</div>
-            <div className="sigbar-goal-num">{fmt(ULTIMATE_GOAL)}</div>
+            <div className="sigbar-goal-num">1 million</div>
             <div className="sigbar-goal-word">signatures</div>
-            <p className="sigbar-goal-sub"><b>1 million signatures</b> will force Prime Minister Albanese to address the immigration crisis.</p>
+            <p className="sigbar-goal-sub">To <b>force Albanese to act</b> on the immigration crisis.</p>
           </div>
         </div>
         <div className="container container--wide sigbar-inner">

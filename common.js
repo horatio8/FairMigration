@@ -505,11 +505,11 @@
       color: "#fff"
     }), " Our goal"), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-goal-num"
-    }, fmt(ULTIMATE_GOAL)), /*#__PURE__*/React.createElement("div", {
+    }, "1 million"), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-goal-word"
     }, "signatures"), /*#__PURE__*/React.createElement("p", {
       className: "sigbar-goal-sub"
-    }, /*#__PURE__*/React.createElement("b", null, "1 million signatures"), " will force Prime Minister Albanese to address the immigration crisis."))), /*#__PURE__*/React.createElement("div", {
+    }, "To ", /*#__PURE__*/React.createElement("b", null, "force Albanese to act"), " on the immigration crisis."))), /*#__PURE__*/React.createElement("div", {
       className: "container container--wide sigbar-inner"
     }, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-count"
