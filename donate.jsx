@@ -1,23 +1,24 @@
 /* Fair Migration — Donate page */
 (function () {
+  const { useEffect, useRef } = React;
   const F = window.FM;
   const { useLiveCount, SiteNav, DonateBlock, Footer } = F;
 
-  // Facebook/Instagram ad creatives we run — embedded from Google Drive.
-  const AD_VIDEOS = [
-    { id: '1RkrmAR8kr_AUuI72_QD8imwygl0fJz6A', t: 'Launch 1' },
-    { id: '16AV_SKnOVcPQfdblWLb-dbaBdxqlRo88', t: 'Launch 2' },
-    { id: '1BHXMXyzWlxSI6-sQnFsn-Tb7Djo87bD7', t: 'Launch 3' },
-    { id: '1CwQTangMOw-Dcbo8oi1PAdJ-m6vmqJ7M', t: 'Launch 4' },
-    { id: '12xo1P5b72JGXMiSz71Q1M_enHS9U_pnP', t: 'Launch 5' },
-    { id: '1ObqY8QbLOpRddk7AT2XfeiBGVi4eCUNF', t: 'Launch 6' },
-    { id: '1G28aEB0TE9K15ewZDHS-lvNxGoypKVOf', t: 'Launch 7' },
-    { id: '1KUbVz1OVDeQ8Kt8IAxnRDE4Z1B8seg8x', t: 'Launch 8' },
-    { id: '1SvOcGWErF1nNoUbUpj7Od2asrezNszOT', t: 'Launch 9' },
-    { id: '132NXs-TCiy054xfsGejzdpnRzX8ZhuD_', t: 'Launch 10' },
-  ];
+  // Self-hosted ad creatives (compressed from the launch set) — muted autoplay loops.
+  const AD_VIDEOS = ['ad-1', 'ad-2', 'ad-3', 'ad-4', 'ad-5', 'ad-6', 'ad-7', 'ad-8', 'ad-9', 'ad-10'];
 
   function AdVideos() {
+    const gridRef = useRef(null);
+    useEffect(() => {
+      const vids = gridRef.current ? Array.from(gridRef.current.querySelectorAll('video')) : [];
+      if (!('IntersectionObserver' in window)) { vids.forEach((v) => v.play().catch(() => {})); return undefined; }
+      // only play videos while they're on screen — keeps 10 clips off the main thread
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { const v = e.target; if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); });
+      }, { threshold: 0.35 });
+      vids.forEach((v) => io.observe(v));
+      return () => io.disconnect();
+    }, []);
     return (
       <section className="section section--tint ad-videos">
         <div className="container container--wide">
@@ -26,11 +27,13 @@
             <h2 className="h2-display">The ads your donation puts in front of Australians.</h2>
             <p className="lead-p">This is the work — the real campaign creative we run to cut through and tell Australians the truth about immigration.</p>
           </div>
-          <div className="ad-videos-grid">
-            {AD_VIDEOS.map((v) => (
-              <div className="ad-video" key={v.id}>
-                <iframe src={'https://drive.google.com/file/d/' + v.id + '/preview'} title={v.t}
-                  allow="autoplay" allowFullScreen loading="lazy" />
+          <div className="ad-videos-grid" ref={gridRef}>
+            {AD_VIDEOS.map((f, i) => (
+              <div className="ad-video" key={f}>
+                <video muted loop playsInline preload="metadata" aria-label={'Fair Migration ad ' + (i + 1)}>
+                  <source src={'assets/' + f + '.webm'} type="video/webm" />
+                  <source src={'assets/' + f + '.mp4'} type="video/mp4" />
+                </video>
               </div>
             ))}
           </div>

@@ -289,11 +289,13 @@ section[id] { scroll-margin-top: 116px; }
 .donate-impact-amt { flex: none; min-width: 64px; font-weight: 900; font-size: 18px; letter-spacing: -0.01em; color: var(--coral-400); }
 .donate-impact b { color: #fff; font-weight: 800; }
 
-/* donate — ad video gallery */
-.ad-videos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 44px; }
-.ad-video { position: relative; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000;
+/* donate — ad video gallery (vertical 9:16 creatives) */
+.ad-videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px;
+  margin: 44px auto 0; max-width: 1080px; }
+.ad-video { position: relative; aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; background: #000;
   border: 1px solid var(--line-200); box-shadow: var(--shadow-sm); }
-.ad-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.ad-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 560px) { .ad-videos-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
 
 /* red utility bar — allow wrap on small screens */
 @media (max-width: 480px) { .util-inner { white-space: normal; text-align: center; font-size: 12px; gap: 8px; } }
