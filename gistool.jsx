@@ -340,8 +340,8 @@
         {view === 'rank' ? (
           <Rankings field={layer.idx} layer={layer} activePc={active} onPick={(p) => { setEntry(p); go(p); setView('map'); }} />
         ) : mode === 'national' || !D[pc] ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '0' }}>
-            <div style={{ padding: '28px 26px', borderRight: '1px solid var(--line-200)' }}>
+          <div className="map-split">
+            <div className="map-split-l" style={{ padding: '28px 26px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '8px', maxWidth: '380px', margin: '0 auto' }}>
                 {STATES.map((s) => <StateTile key={s.code} s={s} v={savg[s.code] || 0} onPick={(st) => { const top = topPostcode(st.code, layer.idx); if (top) { setEntry(top); go(top); } }} />)}
               </div>
@@ -365,8 +365,8 @@
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '0' }}>
-            <div style={{ padding: '26px', borderRight: '1px solid var(--line-200)' }}>
+          <div className="map-split map-split--detail">
+            <div className="map-split-l" style={{ padding: '26px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink-900)', whiteSpace: 'nowrap' }}>
                   {D[pc][F.loc]} <span style={{ color: 'var(--ink-400)', fontWeight: 700 }}>· {pc}</span>

@@ -1,4 +1,10 @@
-"use strict";
+/* =====================================================================
+   Fair Migration — Postcode Impact Map (real ABS + place-name data)
+   National state cartogram (data-driven averages) → drills into a local
+   grid of the geographically nearest postcodes. Figures from
+   window.POSTCODE_DATA (ABS Census 2021/2016 + Australia Post/G-NAF
+   localities & centroids). Exported to window.PostcodeTool.
+   ===================================================================== */
 
 (function () {
   const {
@@ -9,6 +15,7 @@
   const D = window.POSTCODE_DATA || {};
   const EXCL = window.POSTCODE_EXCLUDED || {};
   const PCS = Object.keys(D);
+  // row = [loc, state, lat, lng, pop21, ob%, growth%, ann%, rentInc%, rent$, income$, migIdx, growthIdx, rentIdx, allLoc]
   const F = {
     loc: 0,
     state: 1,
@@ -26,6 +33,8 @@
     rentIdx: 13,
     allLoc: 14
   };
+
+  /* ---------- heat colour scale (low green → amber → high red) ---------- */
   const STOPS = [[0, [31, 122, 77]], [0.28, [127, 160, 60]], [0.5, [219, 158, 32]], [0.72, [200, 92, 38]], [1, [162, 1, 0]]];
   function heat(v) {
     v = Math.max(0, Math.min(1, v));
@@ -69,6 +78,8 @@
     source: 'ABS Census 2021 — rent-to-income'
   }];
   const stateOf = pc => D[pc] ? D[pc][F.state] : null;
+
+  /* ---------- precomputed national ranks per index column ---------- */
   const RANK = {};
   function ranksFor(field) {
     if (RANK[field]) return RANK[field];
@@ -82,6 +93,8 @@
       count: arr.length
     };
   }
+
+  /* ---------- state averages per index column ---------- */
   const SAVG = {};
   function stateAvg(field) {
     if (SAVG[field]) return SAVG[field];
@@ -111,6 +124,8 @@
     }
     return best;
   }
+
+  /* ---------- geographically nearest postcodes, arranged north-up / west-left ---------- */
   function nearbyGrid(pc) {
     const a = D[pc];
     if (!a || a[F.lat] == null) return [pc];
@@ -124,7 +139,7 @@
     });
     arr.sort((x, y) => x[1] - y[1]);
     let near = arr.slice(0, 25).map(x => x[0]);
-    near.sort((x, y) => D[y][F.lat] - D[x][F.lat]);
+    near.sort((x, y) => D[y][F.lat] - D[x][F.lat]); // north first
     const out = [];
     for (let i = 0; i < near.length; i += 5) out.push(...near.slice(i, i + 5).sort((x, y) => D[x][F.lng] - D[y][F.lng]));
     return out;
@@ -176,7 +191,7 @@
     onPick
   }) {
     const [hover, setHover] = useState(false);
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       onClick: () => onPick(s),
       onMouseEnter: () => setHover(true),
       onMouseLeave: () => setHover(false),
@@ -202,13 +217,13 @@
         textShadow: '0 1px 2px rgba(0,0,0,.35)'
       },
       title: `${s.name} — average ${Math.round(v)} / 100 · click to drill in`
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: '17px',
         fontWeight: 900,
         letterSpacing: '0.02em'
       }
-    }, s.code), React.createElement("span", {
+    }, s.code), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: '12px',
         fontWeight: 700,
@@ -218,7 +233,7 @@
   }
   function Legend() {
     const grad = `linear-gradient(90deg, ${heat(0)}, ${heat(0.28)}, ${heat(0.5)}, ${heat(0.72)}, ${heat(1)})`;
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -227,7 +242,7 @@
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, React.createElement("span", null, "Lower"), React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, "Lower"), /*#__PURE__*/React.createElement("span", {
       style: {
         flex: 1,
         height: '8px',
@@ -235,20 +250,20 @@
         background: grad,
         minWidth: '120px'
       }
-    }), React.createElement("span", null, "Higher"));
+    }), /*#__PURE__*/React.createElement("span", null, "Higher"));
   }
   function Trend({
     v,
     label
   }) {
-    if (v == null) return React.createElement("span", {
+    if (v == null) return /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--ink-400)',
         fontWeight: 700
       }
     }, "n/a");
     const up = v >= 0;
-    return React.createElement("span", {
+    return /*#__PURE__*/React.createElement("span", {
       style: {
         color: up ? 'var(--red-500)' : 'var(--color-success)',
         fontWeight: 800,
@@ -262,7 +277,7 @@
     value,
     muted
   }) {
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         justifyContent: 'space-between',
@@ -272,12 +287,12 @@
         borderBottom: '1px dashed var(--line-200)',
         paddingBottom: '8px'
       }
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, label), React.createElement("span", {
+    }, label), /*#__PURE__*/React.createElement("span", {
       style: {
         color: muted ? 'var(--ink-500)' : 'var(--ink-900)',
         fontWeight: muted ? 600 : 800,
@@ -292,7 +307,7 @@
     centre,
     onSelect
   }) {
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
@@ -303,7 +318,7 @@
       const v = D[pc][field];
       const isSel = pc === selected,
         isCentre = pc === centre;
-      return React.createElement("button", {
+      return /*#__PURE__*/React.createElement("button", {
         key: pc,
         onClick: () => onSelect(pc),
         style: {
@@ -324,7 +339,7 @@
           minHeight: 0
         },
         title: `${D[pc][F.loc]} ${pc} — ${Math.round(v)} / 100`
-      }, React.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontFamily: 'var(--font-sans)',
           fontSize: '10.5px',
@@ -337,7 +352,7 @@
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden'
         }
-      }, D[pc][F.loc]), isCentre && React.createElement("span", {
+      }, D[pc][F.loc]), isCentre && /*#__PURE__*/React.createElement("span", {
         style: {
           position: 'absolute',
           top: 4,
@@ -345,7 +360,7 @@
           fontSize: '11px'
         },
         title: "Your postcode"
-      }, "\u2605"));
+      }, "★"));
     }));
   }
   function StatPanel({
@@ -361,13 +376,13 @@
     const rank = ranks.map[pc];
     const rawVal = rec[layer.raw];
     const allLoc = rec[F.allLoc];
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
         gap: '18px'
       }
-    }, React.createElement("div", null, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '12px',
         fontWeight: 800,
@@ -375,7 +390,7 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, "Your area"), React.createElement("div", {
+    }, "Your area"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '26px',
         fontWeight: 900,
@@ -384,13 +399,13 @@
         marginTop: '2px',
         lineHeight: 1.12
       }
-    }, rec[F.loc]), React.createElement("div", {
+    }, rec[F.loc]), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '14px',
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, pc, " \xB7 ", rec[F.state], rec[F.pop] != null ? ' · ' + rec[F.pop].toLocaleString() + ' residents (2021)' : ''), allLoc && allLoc !== rec[F.loc] && React.createElement("div", {
+    }, pc, " · ", rec[F.state], rec[F.pop] != null ? ' · ' + rec[F.pop].toLocaleString() + ' residents (2021)' : ''), allLoc && allLoc !== rec[F.loc] && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '12px',
         color: 'var(--ink-400)',
@@ -398,20 +413,20 @@
         marginTop: '4px',
         lineHeight: 1.4
       }
-    }, "Covers: ", allLoc)), React.createElement("div", {
+    }, "Covers: ", allLoc)), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: '10px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         background: 'var(--mist-50)',
         border: '1px solid var(--line-200)',
         borderRadius: '8px',
         padding: '12px 14px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '11px',
         fontWeight: 800,
@@ -419,33 +434,33 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, layer.short), React.createElement("div", {
+    }, layer.short), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'baseline',
         gap: '6px'
       }
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: '30px',
         fontWeight: 900,
         color: heat((idxVal || 0) / 100),
         letterSpacing: '-0.02em'
       }
-    }, idxVal == null ? '—' : Math.round(idxVal)), React.createElement("span", {
+    }, idxVal == null ? '—' : Math.round(idxVal)), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: '13px',
         color: 'var(--ink-400)',
         fontWeight: 700
       }
-    }, "/100"))), React.createElement("div", {
+    }, "/100"))), /*#__PURE__*/React.createElement("div", {
       style: {
         background: 'var(--mist-50)',
         border: '1px solid var(--line-200)',
         borderRadius: '8px',
         padding: '12px 14px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '11px',
         fontWeight: 800,
@@ -453,68 +468,70 @@
         textTransform: 'uppercase',
         color: 'var(--ink-500)'
       }
-    }, "Growth / yr"), React.createElement("div", {
+    }, "Growth / yr"), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: '6px'
       }
-    }, React.createElement(Trend, {
+    }, /*#__PURE__*/React.createElement(Trend, {
       v: rec[F.ann]
-    })))), React.createElement("div", {
+    })))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
         gap: '8px'
       }
-    }, React.createElement(Row, {
+    }, /*#__PURE__*/React.createElement(Row, {
       label: layer.rawLabel,
       value: rawVal == null ? 'n/a' : rawVal.toFixed(1) + layer.rawUnit
-    }), React.createElement(Row, {
-      label: "Population growth 2016\u201321",
+    }), /*#__PURE__*/React.createElement(Row, {
+      label: "Population growth 2016–21",
       value: rec[F.growth] == null ? 'n/a' : (rec[F.growth] >= 0 ? '+' : '') + rec[F.growth].toFixed(1) + '%'
-    }), React.createElement(Row, {
+    }), /*#__PURE__*/React.createElement(Row, {
       label: "Median weekly rent",
       value: rec[F.rent] == null ? 'n/a' : '$' + rec[F.rent].toLocaleString()
-    }), React.createElement(Row, {
+    }), /*#__PURE__*/React.createElement(Row, {
       label: "Median weekly income",
       value: rec[F.income] == null ? 'n/a' : '$' + rec[F.income].toLocaleString()
-    }), React.createElement(Row, {
+    }), /*#__PURE__*/React.createElement(Row, {
       label: "National rank",
       value: rank ? '#' + rank.toLocaleString() + ' of ' + ranks.count.toLocaleString() : 'n/a'
-    }), React.createElement(Row, {
+    }), /*#__PURE__*/React.createElement(Row, {
       label: "Data source",
       value: layer.source,
       muted: true
-    })), React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         borderTop: '1px solid var(--line-200)',
         paddingTop: '16px'
       }
-    }, React.createElement("p", {
+    }, /*#__PURE__*/React.createElement("p", {
       style: {
         margin: 0,
         fontSize: '14px',
         lineHeight: 1.6,
         color: 'var(--ink-700)'
       }
-    }, React.createElement("strong", {
+    }, /*#__PURE__*/React.createElement("strong", {
       style: {
         color: 'var(--ink-900)'
       }
-    }, rec[F.loc]), " sits", ' ', React.createElement("strong", {
+    }, rec[F.loc]), " sits", ' ', /*#__PURE__*/React.createElement("strong", {
       style: {
         color: heat((idxVal || 0) / 100)
       }
-    }, idxVal > 66 ? 'far above' : idxVal > 40 ? 'above' : 'near'), ' ', "the national average on ", layer.label.toLowerCase(), ". This is the strain on ", React.createElement("span", {
+    }, idxVal > 66 ? 'far above' : idxVal > 40 ? 'above' : 'near'), ' ', "the national average on ", layer.label.toLowerCase(), ". This is the strain on ", /*#__PURE__*/React.createElement("span", {
       style: {
         fontWeight: 800
       }
     }, "YOUR"), " community.")));
   }
+
+  /* ---------- three big data-layer toggle buttons (top of tool) ---------- */
   function LayerBar({
     layerId,
     setLayer
   }) {
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -525,7 +542,7 @@
       }
     }, LAYERS.map(l => {
       const on = l.id === layerId;
-      return React.createElement("button", {
+      return /*#__PURE__*/React.createElement("button", {
         key: l.id,
         onClick: () => setLayer(l.id),
         style: {
@@ -540,13 +557,13 @@
           transition: 'all .12s ease',
           boxShadow: on ? 'var(--shadow-sm)' : 'none'
         }
-      }, React.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: '15px',
           fontWeight: 800,
           letterSpacing: '-0.01em'
         }
-      }, l.label), React.createElement("div", {
+      }, l.label), /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: '11px',
           fontWeight: 600,
@@ -556,6 +573,8 @@
       }, l.short));
     }));
   }
+
+  /* ---------- suburb rankings (top by the selected layer) ---------- */
   function Rankings({
     field,
     layer,
@@ -563,24 +582,24 @@
     activePc
   }) {
     const top = useMemo(() => PCS.filter(p => D[p][field] != null).sort((a, b) => D[b][field] - D[a][field]).slice(0, 25), [field]);
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '22px 26px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '15px',
         fontWeight: 800,
         color: 'var(--ink-900)'
       }
-    }, "Australia's highest ", layer.label.toLowerCase(), " suburbs"), React.createElement("div", {
+    }, "Australia's highest ", layer.label.toLowerCase(), " suburbs"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '12px',
         color: 'var(--ink-500)',
         fontWeight: 600,
         margin: '2px 0 14px'
       }
-    }, "Ranked by ", layer.short, " \xB7 tap a row to open it on the map"), React.createElement("div", {
+    }, "Ranked by ", layer.short, " · tap a row to open it on the map"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
@@ -588,7 +607,7 @@
       }
     }, top.map((p, i) => {
       const v = D[p][field];
-      return React.createElement("button", {
+      return /*#__PURE__*/React.createElement("button", {
         key: p,
         onClick: () => onPick(p),
         style: {
@@ -604,44 +623,44 @@
           padding: '9px 12px',
           fontFamily: 'var(--font-sans)'
         }
-      }, React.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: '14px',
           fontWeight: 900,
           color: 'var(--ink-400)'
         }
-      }, i + 1), React.createElement("span", {
+      }, i + 1), /*#__PURE__*/React.createElement("span", {
         style: {
           minWidth: 0,
           overflow: 'hidden'
         }
-      }, React.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: '14px',
           fontWeight: 700,
           color: 'var(--ink-900)'
         }
-      }, D[p][F.loc]), ' ', React.createElement("span", {
+      }, D[p][F.loc]), ' ', /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: '12px',
           color: 'var(--ink-400)',
           fontWeight: 600
         }
-      }, p, " \xB7 ", D[p][F.state])), React.createElement("span", {
+      }, p, " · ", D[p][F.state])), /*#__PURE__*/React.createElement("span", {
         style: {
           height: '8px',
           borderRadius: '999px',
           background: 'var(--mist-100)',
           overflow: 'hidden'
         }
-      }, React.createElement("span", {
+      }, /*#__PURE__*/React.createElement("span", {
         style: {
           display: 'block',
           height: '100%',
           width: Math.round(v) + '%',
           background: heat(v / 100)
         }
-      })), React.createElement("span", {
+      })), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: '15px',
           fontWeight: 900,
@@ -651,6 +670,8 @@
       }, Math.round(v)));
     })));
   }
+
+  /* ---------- the whole tool ---------- */
   function PostcodeTool({
     initialPostcode,
     onSign,
@@ -697,7 +718,7 @@
       });
     }, []);
     const active = sel && D[sel] ? sel : pc;
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       style: {
         background: '#fff',
         border: '1px solid var(--line-200)',
@@ -705,7 +726,7 @@
         boxShadow: 'var(--shadow-md)',
         overflow: 'hidden'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '22px 26px',
         borderBottom: '1px solid var(--line-200)',
@@ -716,11 +737,11 @@
         justifyContent: 'space-between',
         background: 'var(--navy-700)'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         minWidth: '200px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '12px',
         fontWeight: 800,
@@ -730,7 +751,7 @@
         lineHeight: 1.4,
         whiteSpace: 'nowrap'
       }
-    }, "Migration Impact Map"), React.createElement("div", {
+    }, "Migration Impact Map"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '21px',
         fontWeight: 900,
@@ -740,7 +761,7 @@
         lineHeight: 1.15,
         whiteSpace: 'nowrap'
       }
-    }, mode === 'national' ? 'See it across Australia' : 'Your local impact')), React.createElement("form", {
+    }, mode === 'national' ? 'See it across Australia' : 'Your local impact')), /*#__PURE__*/React.createElement("form", {
       onSubmit: e => {
         e.preventDefault();
         go(entry);
@@ -750,7 +771,7 @@
         gap: '8px',
         alignItems: 'flex-start'
       }
-    }, React.createElement("div", null, React.createElement("input", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("input", {
       value: entry,
       onChange: e => setEntry(e.target.value.replace(/\D/g, '').slice(0, 4)),
       inputMode: "numeric",
@@ -766,7 +787,7 @@
         outline: 'none',
         boxShadow: 'var(--shadow-xs)'
       }
-    }), err && React.createElement("div", {
+    }), err && /*#__PURE__*/React.createElement("div", {
       style: {
         color: 'var(--coral-400)',
         fontSize: '12px',
@@ -775,7 +796,7 @@
         maxWidth: '230px',
         lineHeight: 1.4
       }
-    }, err)), React.createElement("button", {
+    }, err)), /*#__PURE__*/React.createElement("button", {
       type: "submit",
       style: {
         background: 'var(--red-500)',
@@ -792,10 +813,10 @@
       },
       onMouseEnter: e => e.currentTarget.style.background = 'var(--red-600)',
       onMouseLeave: e => e.currentTarget.style.background = 'var(--red-500)'
-    }, mode === 'national' ? 'View my area' : 'Update'))), React.createElement(LayerBar, {
+    }, mode === 'national' ? 'View my area' : 'Update'))), /*#__PURE__*/React.createElement(LayerBar, {
       layerId: layerId,
       setLayer: setLayerId
-    }), React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         justifyContent: 'space-between',
@@ -803,20 +824,20 @@
         padding: '12px 26px',
         borderBottom: '1px solid var(--line-200)'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '12px',
         fontWeight: 700,
         color: 'var(--ink-500)'
       }
-    }, view === 'rank' ? 'Ranked suburbs' : mode === 'local' && D[pc] ? D[pc][F.loc] + ' · ' + pc : 'Explore across Australia'), React.createElement("div", {
+    }, view === 'rank' ? 'Ranked suburbs' : mode === 'local' && D[pc] ? D[pc][F.loc] + ' · ' + pc : 'Explore across Australia'), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'inline-flex',
         background: 'var(--mist-100)',
         borderRadius: '999px',
         padding: '3px'
       }
-    }, [['map', 'Map'], ['rank', 'Rankings']].map(it => React.createElement("button", {
+    }, [['map', 'Map'], ['rank', 'Rankings']].map(it => /*#__PURE__*/React.createElement("button", {
       key: it[0],
       onClick: () => setView(it[0]),
       style: {
@@ -831,7 +852,7 @@
         color: view === it[0] ? '#fff' : 'var(--ink-500)',
         transition: 'all .12s ease'
       }
-    }, it[1])))), view === 'rank' ? React.createElement(Rankings, {
+    }, it[1])))), view === 'rank' ? /*#__PURE__*/React.createElement(Rankings, {
       field: layer.idx,
       layer: layer,
       activePc: active,
@@ -840,18 +861,14 @@
         go(p);
         setView('map');
       }
-    }) : mode === 'national' || !D[pc] ? React.createElement("div", {
+    }) : mode === 'national' || !D[pc] ? /*#__PURE__*/React.createElement("div", {
+      className: "map-split"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "map-split-l",
       style: {
-        display: 'grid',
-        gridTemplateColumns: '1.1fr 0.9fr',
-        gap: '0'
+        padding: '28px 26px'
       }
-    }, React.createElement("div", {
-      style: {
-        padding: '28px 26px',
-        borderRight: '1px solid var(--line-200)'
-      }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
@@ -860,7 +877,7 @@
         maxWidth: '380px',
         margin: '0 auto'
       }
-    }, STATES.map(s => React.createElement(StateTile, {
+    }, STATES.map(s => /*#__PURE__*/React.createElement(StateTile, {
       key: s.code,
       s: s,
       v: savg[s.code] || 0,
@@ -871,19 +888,19 @@
           go(top);
         }
       }
-    }))), React.createElement("div", {
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         maxWidth: '380px',
         margin: '22px auto 0'
       }
-    }, React.createElement(Legend, null))), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(Legend, null))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '28px 26px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center'
       }
-    }, React.createElement("h3", {
+    }, /*#__PURE__*/React.createElement("h3", {
       style: {
         margin: '0 0 12px',
         fontSize: '24px',
@@ -892,18 +909,18 @@
         color: 'var(--ink-900)',
         lineHeight: 1.15
       }
-    }, "Migration isn't abstract. It's ", React.createElement("span", {
+    }, "Migration isn't abstract. It's ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--red-500)'
       }
-    }, "your suburb.")), React.createElement("p", {
+    }, "your suburb.")), /*#__PURE__*/React.createElement("p", {
       style: {
         margin: '0 0 16px',
         fontSize: '15px',
         lineHeight: 1.65,
         color: 'var(--ink-700)'
       }
-    }, "Enter your postcode to see real ABS figures for ", React.createElement("strong", null, "your area"), " \u2014 migration intensity, population growth and rental stress, ranked against every postcode in Australia. Tap any state for its busiest postcode."), React.createElement("ul", {
+    }, "Enter your postcode to see real ABS figures for ", /*#__PURE__*/React.createElement("strong", null, "your area"), " — migration intensity, population growth and rental stress, ranked against every postcode in Australia. Tap any state for its busiest postcode."), /*#__PURE__*/React.createElement("ul", {
       style: {
         margin: 0,
         padding: 0,
@@ -912,7 +929,7 @@
         flexDirection: 'column',
         gap: '10px'
       }
-    }, ['Real per-postcode figures from the ABS Census', 'Migration, growth and rental-stress layers', 'Ranked against 2,532 postcodes nationwide'].map(t => React.createElement("li", {
+    }, ['Real per-postcode figures from the ABS Census', 'Migration, growth and rental-stress layers', 'Ranked against 2,532 postcodes nationwide'].map(t => /*#__PURE__*/React.createElement("li", {
       key: t,
       style: {
         display: 'flex',
@@ -922,70 +939,66 @@
         color: 'var(--ink-700)',
         fontWeight: 600
       }
-    }, React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--red-500)',
         fontWeight: 900
       }
-    }, "\u203A"), t))))) : React.createElement("div", {
+    }, "›"), t))))) : /*#__PURE__*/React.createElement("div", {
+      className: "map-split map-split--detail"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "map-split-l",
       style: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 360px',
-        gap: '0'
+        padding: '26px'
       }
-    }, React.createElement("div", {
-      style: {
-        padding: '26px',
-        borderRight: '1px solid var(--line-200)'
-      }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '14px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '15px',
         fontWeight: 800,
         color: 'var(--ink-900)',
         whiteSpace: 'nowrap'
       }
-    }, D[pc][F.loc], " ", React.createElement("span", {
+    }, D[pc][F.loc], " ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--ink-400)',
         fontWeight: 700
       }
-    }, "\xB7 ", pc)), React.createElement("div", {
+    }, "· ", pc)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '12px',
         fontWeight: 700,
         color: 'var(--ink-500)',
         textAlign: 'right'
       }
-    }, layer.label)), React.createElement(PostcodeGrid, {
+    }, layer.label)), /*#__PURE__*/React.createElement(PostcodeGrid, {
       cells: cells,
       field: layer.idx,
       selected: active,
       centre: pc,
       onSelect: setSel
-    }), React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: '16px'
       }
-    }, React.createElement(Legend, null)), React.createElement("p", {
+    }, /*#__PURE__*/React.createElement(Legend, null)), /*#__PURE__*/React.createElement("p", {
       style: {
         margin: '12px 0 0',
         fontSize: '12px',
         color: 'var(--ink-400)',
         fontWeight: 600
       }
-    }, "\u2605 Your postcode. Tap any tile for its figures. Tiles are the nearest suburbs/postcodes by location. Real ABS Census 2021/2016 data (Postal Areas).")), React.createElement("div", {
+    }, "★ Your postcode. Tap any tile for its figures. Tiles are the nearest suburbs/postcodes by location. Real ABS Census 2021/2016 data (Postal Areas).")), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '26px'
       }
-    }, React.createElement(StatPanel, {
+    }, /*#__PURE__*/React.createElement(StatPanel, {
       pc: active,
       layer: layer,
       setLayer: setLayerId,
@@ -994,7 +1007,7 @@
         setSel(null);
       },
       onSign: onSign
-    }))), React.createElement("div", {
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         padding: '18px 26px',
         borderTop: '1px solid var(--line-200)',
@@ -1005,25 +1018,25 @@
         alignItems: 'center',
         justifyContent: 'space-between'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: '14px',
         fontWeight: 700,
         color: 'var(--ink-900)',
         maxWidth: '46ch'
       }
-    }, "Migration is reshaping your community. ", React.createElement("span", {
+    }, "Migration is reshaping your community. ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--ink-500)',
         fontWeight: 600
       }
-    }, "Demand a system that puts Australians first.")), React.createElement("div", {
+    }, "Demand a system that puts Australians first.")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: '10px',
         flexShrink: 0
       }
-    }, mode === 'local' && D[pc] && view === 'map' && React.createElement("button", {
+    }, mode === 'local' && D[pc] && view === 'map' && /*#__PURE__*/React.createElement("button", {
       onClick: () => {
         setMode('national');
         setSel(null);
@@ -1039,7 +1052,7 @@
         fontWeight: 700,
         fontFamily: 'var(--font-sans)'
       }
-    }, "\u2190 National"), React.createElement("button", {
+    }, "← National"), /*#__PURE__*/React.createElement("button", {
       onClick: onSign,
       style: {
         background: 'var(--red-500)',
@@ -1057,7 +1070,7 @@
       },
       onMouseEnter: e => e.currentTarget.style.background = 'var(--red-600)',
       onMouseLeave: e => e.currentTarget.style.background = 'var(--red-500)'
-    }, "Demand fair migration \u2192 Add your name"))));
+    }, "Demand fair migration → Add your name"))));
   }
   window.PostcodeTool = PostcodeTool;
 })();

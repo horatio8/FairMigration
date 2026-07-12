@@ -186,6 +186,14 @@ section[id] { scroll-margin-top: 116px; }
 .map-head h2 { color: #fff; }
 .map-lead { color: rgba(255,255,255,.78); font-size: 18px; line-height: 1.6; font-weight: 500; margin: 18px 0 0; max-width: 60ch; }
 .map-stage { margin-top: 44px; }
+/* map two-column splits — stack on mobile so the detail panel is never cut off */
+.map-split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 0; }
+.map-split--detail { grid-template-columns: 1fr 360px; }
+.map-split-l { border-right: 1px solid var(--line-200); }
+@media (max-width: 760px) {
+  .map-split, .map-split--detail { grid-template-columns: 1fr; }
+  .map-split-l { border-right: none; border-bottom: 1px solid var(--line-200); }
+}
 
 /* ---------- demand manifesto ---------- */
 .manifesto { max-width: 920px; }
