@@ -1,6 +1,6 @@
 /* Fair Migration — Sign the Petition page */
 (function () {
-  const { useState } = React;
+  const { useState, useEffect } = React;
   const F = window.FM;
   const { useLiveCount, markSigned, safeGet, clean4, SiteNav, PageHead, SignatureBar, PetitionSection, Footer } = F;
 
@@ -8,6 +8,15 @@
     const [count, setCount] = useLiveCount();
     const [signed, setSigned] = useState(safeGet('fm_signed') === '1');
     const [pc, setPc] = useState(safeGet('fm_pc') || '');
+    // Land visitors straight on the signature block so signing is one glance away.
+    useEffect(() => {
+      if (signed) return undefined;
+      const t = setTimeout(() => {
+        const el = document.getElementById('sign');
+        if (el) { const y = el.getBoundingClientRect().top + window.scrollY - 88; window.scrollTo({ top: y, behavior: 'smooth' }); }
+      }, 350);
+      return () => clearTimeout(t);
+    }, []);
     const onSign = (data) => {
       markSigned(data); setSigned(true); setCount((c) => c + 1); setPc(clean4(data.postcode));
       try {

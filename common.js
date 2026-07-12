@@ -919,9 +919,11 @@
     }, /*#__PURE__*/React.createElement(CheckIcon, null))), /*#__PURE__*/React.createElement("div", {
       className: "why-text"
     }, /*#__PURE__*/React.createElement("h4", null, w.h), /*#__PURE__*/React.createElement("p", null, w.p))))))), /*#__PURE__*/React.createElement("div", {
+      id: "sign",
       style: {
         position: 'sticky',
-        top: '120px'
+        top: '120px',
+        scrollMarginTop: '90px'
       }
     }, /*#__PURE__*/React.createElement("div", {
       className: "goal-block"

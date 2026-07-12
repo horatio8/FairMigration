@@ -456,7 +456,7 @@
                 </ul>
               </div>
             </div>
-            <div style={{ position: 'sticky', top: '120px' }}>
+            <div id="sign" style={{ position: 'sticky', top: '120px', scrollMarginTop: '90px' }}>
               <div className="goal-block">
                 <div className="goal-row">
                   <div className="goal-now">{fmt(count)} <span>signatures</span></div>

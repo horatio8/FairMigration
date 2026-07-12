@@ -1,8 +1,8 @@
-"use strict";
-
+/* Fair Migration — Sign the Petition page */
 (function () {
   const {
-    useState
+    useState,
+    useEffect
   } = React;
   const F = window.FM;
   const {
@@ -20,6 +20,21 @@
     const [count, setCount] = useLiveCount();
     const [signed, setSigned] = useState(safeGet('fm_signed') === '1');
     const [pc, setPc] = useState(safeGet('fm_pc') || '');
+    // Land visitors straight on the signature block so signing is one glance away.
+    useEffect(() => {
+      if (signed) return undefined;
+      const t = setTimeout(() => {
+        const el = document.getElementById('sign');
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY - 88;
+          window.scrollTo({
+            top: y,
+            behavior: 'smooth'
+          });
+        }
+      }, 350);
+      return () => clearTimeout(t);
+    }, []);
     const onSign = data => {
       markSigned(data);
       setSigned(true);
@@ -33,21 +48,21 @@
         });
       } catch (e) {}
     };
-    return React.createElement("div", null, React.createElement(SiteNav, {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "petition",
       count: count
-    }), React.createElement(PageHead, {
+    }), /*#__PURE__*/React.createElement(PageHead, {
       eyebrow: "Sign the petition",
       title: "Add your name.",
       lead: "It takes ten seconds. Then see exactly what migration is doing to your suburb."
-    }), React.createElement(SignatureBar, {
+    }), /*#__PURE__*/React.createElement(SignatureBar, {
       count: count
-    }), React.createElement(PetitionSection, {
+    }), /*#__PURE__*/React.createElement(PetitionSection, {
       count: count,
       signed: signed,
       pc: pc,
       onSign: onSign
-    }), React.createElement(Footer, null));
+    }), /*#__PURE__*/React.createElement(Footer, null));
   }
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Page, null));
+  ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Page, null));
 })();

@@ -95,7 +95,7 @@ module.exports = async (req, res) => {
         user: { email: cust.email, phone: cust.phone, first_name: contact.fields.first_name, last_name: contact.fields.last_name,
           postcode: cust.postcode, country: cust.country || 'AU', external_id: contact.contact_id, ip: '', ua: '' },
         custom_data: { currency, value: amount_cents / 100, content_name: 'Donation' },
-      }).catch(() => {});
+      }).catch((e) => ({ error: String(e.message || e) }));
 
       // close the lapse row, credit the referrer, and roll up A/B revenue
       const md = obj.metadata || {};
@@ -105,7 +105,13 @@ module.exports = async (req, res) => {
         const day = AT.nowISO().slice(0, 10);
         await OPS.upsertAbDaily(day, 'sms_signup', md.sms_variant, { gifts: 1, revenue: amount_cents / 100 }).catch(() => {});
       }
-      await metaP;
+      const metaRes = await metaP;
+      // Surface Purchase-CAPI health in Vercel logs — value = the donation amount in AUD.
+      if (metaRes && metaRes.events_received) {
+        console.log('[stripe-webhook] Purchase CAPI sent', JSON.stringify({ meta_event_id, value: amount_cents / 100, currency, events_received: metaRes.events_received }));
+      } else {
+        console.error('[stripe-webhook] Purchase CAPI NOT confirmed', JSON.stringify({ meta_event_id, value: amount_cents / 100, currency, result: metaRes }));
+      }
     }
 
     return send(res, 200, { received: true, duplicate });
