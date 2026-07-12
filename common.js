@@ -19,7 +19,9 @@
     Input
   } = DS;
   const A = 'assets/';
-  const GOAL = 75000;
+  const GOAL = 50000; // near-term target
+  const ULTIMATE_GOAL = 1000000; // the million-signature ambition
+
   const fmt = n => n.toLocaleString();
   const pct = n => Math.min(100, n / GOAL * 100);
   const clean4 = s => String(s || '').replace(/\D/g, '').slice(0, 4);
@@ -384,15 +386,7 @@
       className: "util-inner"
     }, /*#__PURE__*/React.createElement("span", {
       className: "util-count"
-    }, /*#__PURE__*/React.createElement("img", {
-      className: "tick-star",
-      src: A + 'favicon-white.png',
-      alt: "",
-      style: {
-        width: 14,
-        height: 14
-      }
-    }), /*#__PURE__*/React.createElement("b", null, fmt(count != null ? count : CFG.signatureFallback)), "\xA0Australians have signed ·", ' ', /*#__PURE__*/React.createElement("a", {
+    }, /*#__PURE__*/React.createElement("b", null, fmt(count != null ? count : CFG.signatureFallback)), "\xA0Australians have signed ·", ' ', /*#__PURE__*/React.createElement("a", {
       href: "petition.html"
     }, "Add your name")))), /*#__PURE__*/React.createElement("header", {
       className: "site-nav"
@@ -472,13 +466,13 @@
       className: "hero-redline"
     }, "Put Australians first."), /*#__PURE__*/React.createElement("p", {
       className: "hero-lead"
-    }, "Australia's migration system has reached a critical tipping point — and it's ", /*#__PURE__*/React.createElement("span", {
+    }, "Mass migration has reached a critical tipping point — and they're trying to hide what it's doing to everyday Australians. It's ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, "your"), " rent,", /*#__PURE__*/React.createElement("span", {
+    }, "your"), " rent, ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
     }, " your"), " hospital queue and ", /*#__PURE__*/React.createElement("span", {
       className: "caps"
-    }, " your"), " commute paying the price."), /*#__PURE__*/React.createElement("div", {
+    }, " your"), " taxes paying the price."), /*#__PURE__*/React.createElement("div", {
       className: "hero-cta"
     }, /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
@@ -497,7 +491,6 @@
   }) {
     const p = pct(count);
     const remaining = Math.max(0, GOAL - count);
-    const milestones = [25000, 50000, GOAL];
     return /*#__PURE__*/React.createElement("section", {
       className: "sigbar",
       "aria-label": "Petition signature count"
@@ -521,28 +514,37 @@
       style: {
         width: p + '%'
       }
-    }), milestones.map(m => /*#__PURE__*/React.createElement("span", {
-      key: m,
-      className: "sigbar-tick",
-      style: {
-        left: pct(m) + '%'
-      }
-    })), /*#__PURE__*/React.createElement("span", {
+    }), /*#__PURE__*/React.createElement("span", {
       className: "sigbar-bubble",
       style: {
         left: p + '%'
       }
     }, Math.round(p), "%")), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-meta"
-    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, fmt(remaining)), " more to reach our goal of ", fmt(GOAL)), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, fmt(remaining)), " more to hit our next goal of ", fmt(GOAL)), /*#__PURE__*/React.createElement("span", {
       className: "sigbar-live"
     }, /*#__PURE__*/React.createElement("span", {
       className: "sigbar-dot"
-    }), " Updating live"))), /*#__PURE__*/React.createElement(Button, {
+    }), " Updating live")), /*#__PURE__*/React.createElement("div", {
+      className: "sigbar-mission"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "sigbar-mission-flag"
+    }, /*#__PURE__*/React.createElement(Star, {
+      size: 13,
+      color: "#fff"
+    }), " The mission"), /*#__PURE__*/React.createElement("span", {
+      className: "sigbar-mission-num"
+    }, fmt(ULTIMATE_GOAL)), /*#__PURE__*/React.createElement("span", {
+      className: "sigbar-mission-word"
+    }, "signatures"))), /*#__PURE__*/React.createElement("div", {
+      className: "sigbar-cta"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "sigbar-push"
+    }, /*#__PURE__*/React.createElement("b", null, "1 million signatures"), " will force Prime Minister Albanese to address the immigration crisis."), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
-    }, "Add your name")));
+    }, "Add your name"))));
   }
 
   /* ---------------- The problem ---------------- */
@@ -552,24 +554,28 @@
     const items = [{
       idx: '01',
       icon: 'home',
+      img: 'problem-housing.jpg',
       stat: '+39%',
       h: 'Housing',
       p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.'
     }, {
       idx: '02',
       icon: 'pulse',
+      img: 'problem-healthcare.jpg',
       stat: 'Strained',
       h: 'Healthcare',
       p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.'
     }, {
       idx: '03',
       icon: 'layers',
+      img: 'problem-infrastructure.jpg',
       stat: 'Gridlock',
       h: 'Infrastructure',
       p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.'
     }, {
       idx: '04',
       icon: 'access',
+      img: 'problem-ndis.jpg',
       stat: 'Uncapped',
       h: 'Disability (NDIS)',
       p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.'
@@ -583,34 +589,38 @@
       className: "section-head"
     }, /*#__PURE__*/React.createElement(Eyebrow, null, "Our migration problem"), /*#__PURE__*/React.createElement("h2", {
       className: "h2-display"
-    }, "For years, our leaders drove radical migration intakes. ", /*#__PURE__*/React.createElement("span", {
+    }, "They're trying to hide ", /*#__PURE__*/React.createElement("span", {
       style: {
         color: 'var(--red-500)'
       }
-    }, "Everyday Australians were left to suffer.")), /*#__PURE__*/React.createElement("p", {
+    }, "the devastation mass migration is causing everyday Australians.")), /*#__PURE__*/React.createElement("p", {
       className: "lead-p"
-    }, "Our Government ", /*#__PURE__*/React.createElement("span", {
-      className: "caps"
-    }, "MUST"), " put Australians first. Mass migration lands hardest on the things you rely on — ", /*#__PURE__*/React.createElement("strong", null, "housing, healthcare, infrastructure"), ", and now ", /*#__PURE__*/React.createElement("strong", null, "disability support"), ".")), /*#__PURE__*/React.createElement("div", {
+    }, "The damage is real — and they'd rather you didn't see it. Mass migration lands hardest on the things you rely on: ", /*#__PURE__*/React.createElement("strong", null, "housing, healthcare, infrastructure"), ", and now ", /*#__PURE__*/React.createElement("strong", null, "disability support"), ".")), /*#__PURE__*/React.createElement("div", {
       className: "pressures"
     }, items.map(it => /*#__PURE__*/React.createElement("div", {
       className: "pressure",
       key: it.idx
     }, /*#__PURE__*/React.createElement("div", {
-      className: "pressure-top"
-    }, /*#__PURE__*/React.createElement("span", {
+      className: "pressure-media"
+    }, /*#__PURE__*/React.createElement("img", {
+      src: A + it.img,
+      alt: it.h,
+      loading: "lazy"
+    }), /*#__PURE__*/React.createElement("span", {
       className: "pressure-ic"
     }, /*#__PURE__*/React.createElement(SvgIcon, {
       name: it.icon
     })), /*#__PURE__*/React.createElement("span", {
       className: "pressure-idx"
     }, it.idx)), /*#__PURE__*/React.createElement("div", {
+      className: "pressure-body"
+    }, /*#__PURE__*/React.createElement("div", {
       className: "pressure-stat"
     }, it.stat), /*#__PURE__*/React.createElement("div", {
       className: "pressure-h"
     }, it.h), /*#__PURE__*/React.createElement("p", {
       className: "pressure-p"
-    }, it.p))))));
+    }, it.p)))))));
   }
 
   /* ---------------- Petition form (first/last/email/mobile/postcode) ---------------- */
@@ -819,15 +829,19 @@
     p: 'A system run in the interests of the Australians who built this country and pay for its services.'
   }];
   const WHY_POINTS = [{
+    img: 'why-housing.jpg',
     h: "A roof over your family's head",
     p: 'Runaway demand has pushed home ownership out of reach and rents to record highs. Australians should be able to afford to live in their own country.'
   }, {
+    img: 'why-services.jpg',
     h: "The services you've paid for",
     p: "You've funded our hospitals, roads and schools your whole working life — they should serve you first, not buckle under numbers they were never built for."
   }, {
+    img: 'why-wages.jpg',
     h: 'Wages that keep up with life',
     p: 'An endless supply of cheap overseas labour holds down the pay of working Australians. Fair migration means a fair go at work.'
   }, {
+    img: 'why-voice.jpg',
     h: "A say in your country's future",
     p: 'Australians were never asked whether they wanted record migration. It is time our leaders listened to the people they serve.'
   }];
@@ -874,9 +888,7 @@
       className: "pq-label"
     }, "Our petition to Canberra")), /*#__PURE__*/React.createElement("p", {
       className: "petition-quote-lead"
-    }, "We call for an immediate overhaul of Australia's migration policies so that they work in ", /*#__PURE__*/React.createElement("span", {
-      className: "caps"
-    }, "our"), " best interests:"), /*#__PURE__*/React.createElement("ol", {
+    }, "We call for an immediate overhaul of Australia's migration policies:"), /*#__PURE__*/React.createElement("ol", {
       className: "demand-list"
     }, DEMANDS.map((d, i) => /*#__PURE__*/React.createElement("li", {
       className: "demand-item",
@@ -891,14 +903,22 @@
       className: "why-fair-title"
     }, "Why Australians deserve fair migration"), /*#__PURE__*/React.createElement("p", {
       className: "why-fair-intro"
-    }, "This isn't about shutting the door — it's about a fair go for the people who call Australia home."), /*#__PURE__*/React.createElement("ul", {
+    }, "This isn't about shutting the door — it's about ensuring a fair go for everyday Australians."), /*#__PURE__*/React.createElement("ul", {
       className: "why-list"
     }, WHY_POINTS.map((w, i) => /*#__PURE__*/React.createElement("li", {
       className: "why-item",
       key: i
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "why-thumb"
+    }, /*#__PURE__*/React.createElement("img", {
+      src: A + w.img,
+      alt: "",
+      loading: "lazy"
+    }), /*#__PURE__*/React.createElement("span", {
       className: "why-ic"
-    }, /*#__PURE__*/React.createElement(CheckIcon, null)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", null, w.h), /*#__PURE__*/React.createElement("p", null, w.p))))))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(CheckIcon, null))), /*#__PURE__*/React.createElement("div", {
+      className: "why-text"
+    }, /*#__PURE__*/React.createElement("h4", null, w.h), /*#__PURE__*/React.createElement("p", null, w.p))))))), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'sticky',
         top: '120px'
@@ -1021,11 +1041,25 @@
       variant: "light"
     }, "Donate"), /*#__PURE__*/React.createElement("h1", {
       className: "donate-head"
-    }, "They have ", /*#__PURE__*/React.createElement("span", {
+    }, "They spend ", /*#__PURE__*/React.createElement("span", {
       className: "donate-billions"
-    }, "BILLION$"), ". We need you."), /*#__PURE__*/React.createElement("p", {
+    }, "billions"), " selling the immigration crisis. Only you can help."), /*#__PURE__*/React.createElement("p", {
       className: "donate-copy"
-    }, "Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar puts the case for fair migration in front of more voters: ads, research, and organising on the ground."), /*#__PURE__*/React.createElement("p", {
+    }, "Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar puts the truth about immigration in front of more voters: ads, research, and organising on the ground."), /*#__PURE__*/React.createElement("ul", {
+      className: "donate-impact"
+    }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$35"), /*#__PURE__*/React.createElement("span", null, "puts our message in front of ", /*#__PURE__*/React.createElement("b", null, "50 Australians"), ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$65"), /*#__PURE__*/React.createElement("span", null, "gets ", /*#__PURE__*/React.createElement("b", null, "50 Australians"), " mail they can't ignore.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$135"), /*#__PURE__*/React.createElement("span", null, "reaches ", /*#__PURE__*/React.createElement("b", null, "500 Australians"), " who have no idea what's happening.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$265"), /*#__PURE__*/React.createElement("span", null, "connects with a ", /*#__PURE__*/React.createElement("b", null, "whole block of voters"), ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$550"), /*#__PURE__*/React.createElement("span", null, "puts a ", /*#__PURE__*/React.createElement("b", null, "newspaper ad"), " in front of critical communities.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$1,500"), /*#__PURE__*/React.createElement("span", null, "reaches ", /*#__PURE__*/React.createElement("b", null, "5,000 Australians"), " with the truth about immigration."))), /*#__PURE__*/React.createElement("p", {
       className: "donate-trust"
     }, "Stripe-secured · All amounts in AUD · Not tax-deductible")), /*#__PURE__*/React.createElement("div", {
       className: "donate-card"
@@ -1269,11 +1303,11 @@
       className: "foot-cta"
     }, /*#__PURE__*/React.createElement("div", {
       className: "container foot-cta-inner"
-    }, /*#__PURE__*/React.createElement("h2", null, "Australia's future is worth a signature."), /*#__PURE__*/React.createElement(Button, {
+    }, /*#__PURE__*/React.createElement("h2", null, "Australia's future is on the line."), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
-    }, "Sign the petition"))), /*#__PURE__*/React.createElement("footer", {
+    }, "Sign today ›"))), /*#__PURE__*/React.createElement("footer", {
       className: "footer"
     }, /*#__PURE__*/React.createElement("div", {
       className: "container",

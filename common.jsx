@@ -10,7 +10,8 @@
   const DS = window.FairMigrationDesignSystem_e28435;
   const { Button, Card, Badge, Input } = DS;
   const A = 'assets/';
-  const GOAL = 75000;
+  const GOAL = 50000;          // near-term target
+  const ULTIMATE_GOAL = 1000000; // the million-signature ambition
 
   const fmt = (n) => n.toLocaleString();
   const pct = (n) => Math.min(100, (n / GOAL) * 100);
@@ -199,7 +200,6 @@
         <div className="util-bar">
           <div className="util-inner">
             <span className="util-count">
-              <img className="tick-star" src={A + 'favicon-white.png'} alt="" style={{ width: 14, height: 14 }} />
               <b>{fmt(count != null ? count : CFG.signatureFallback)}</b>&nbsp;Australians have signed ·{' '}
               <a href="petition.html">Add your name</a>
             </span>
@@ -235,8 +235,8 @@
               <h1 className="display">Australians don't have to live like this.</h1>
               <p className="hero-redline">Put Australians first.</p>
               <p className="hero-lead">
-                Australia's migration system has reached a critical tipping point — and it's <span className="caps">your</span> rent,
-                <span className="caps"> your</span> hospital queue and <span className="caps"> your</span> commute paying the price.
+                Mass migration has reached a critical tipping point — and they're trying to hide what it's doing to everyday Australians.
+                It's <span className="caps">your</span> rent, <span className="caps"> your</span> hospital queue and <span className="caps"> your</span> taxes paying the price.
               </p>
               <div className="hero-cta">
                 <Button variant="primary" size="lg" href="petition.html">Sign the petition</Button>
@@ -253,7 +253,6 @@
   function SignatureBar({ count }) {
     const p = pct(count);
     const remaining = Math.max(0, GOAL - count);
-    const milestones = [25000, 50000, GOAL];
     return (
       <section className="sigbar" aria-label="Petition signature count">
         <div className="container container--wide sigbar-inner">
@@ -267,15 +266,22 @@
           <div className="sigbar-progress">
             <div className="sigbar-track">
               <div className="sigbar-fill" style={{ width: p + '%' }} />
-              {milestones.map((m) => <span key={m} className="sigbar-tick" style={{ left: pct(m) + '%' }} />)}
               <span className="sigbar-bubble" style={{ left: p + '%' }}>{Math.round(p)}%</span>
             </div>
             <div className="sigbar-meta">
-              <span><b>{fmt(remaining)}</b> more to reach our goal of {fmt(GOAL)}</span>
+              <span><b>{fmt(remaining)}</b> more to hit our next goal of {fmt(GOAL)}</span>
               <span className="sigbar-live"><span className="sigbar-dot" /> Updating live</span>
             </div>
+            <div className="sigbar-mission">
+              <span className="sigbar-mission-flag"><Star size={13} color="#fff" /> The mission</span>
+              <span className="sigbar-mission-num">{fmt(ULTIMATE_GOAL)}</span>
+              <span className="sigbar-mission-word">signatures</span>
+            </div>
           </div>
-          <Button variant="primary" size="lg" href="petition.html">Add your name</Button>
+          <div className="sigbar-cta">
+            <p className="sigbar-push"><b>1 million signatures</b> will force Prime Minister Albanese to address the immigration crisis.</p>
+            <Button variant="primary" size="lg" href="petition.html">Add your name</Button>
+          </div>
         </div>
       </section>
     );
@@ -284,10 +290,10 @@
   /* ---------------- The problem ---------------- */
   function Problem({ bare }) {
     const items = [
-      { idx: '01', icon: 'home', stat: '+39%', h: 'Housing', p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.' },
-      { idx: '02', icon: 'pulse', stat: 'Strained', h: 'Healthcare', p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.' },
-      { idx: '03', icon: 'layers', stat: 'Gridlock', h: 'Infrastructure', p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.' },
-      { idx: '04', icon: 'access', stat: 'Uncapped', h: 'Disability (NDIS)', p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.' },
+      { idx: '01', icon: 'home', img: 'problem-housing.jpg', stat: '+39%', h: 'Housing', p: 'Rents have surged at record pace while a generation is locked out of ever owning a home. Demand far outstrips what we can build.' },
+      { idx: '02', icon: 'pulse', img: 'problem-healthcare.jpg', stat: 'Strained', h: 'Healthcare', p: 'Emergency departments overflow and bulk-billing is in freefall. Our hospitals were never resourced for intake at this scale.' },
+      { idx: '03', icon: 'layers', img: 'problem-infrastructure.jpg', stat: 'Gridlock', h: 'Infrastructure', p: 'Roads, trains and schools are buckling. Public services are being asked to stretch across far more people than they were built for.' },
+      { idx: '04', icon: 'access', img: 'problem-ndis.jpg', stat: 'Uncapped', h: 'Disability (NDIS)', p: 'Non-citizens are drawing on the NDIS — a scheme it was never costed for. A safety net built for Australians is being stretched to breaking point.' },
     ];
     return (
       <section id="problem" className="section">
@@ -295,20 +301,23 @@
           {!bare && (
             <div className="section-head">
               <Eyebrow>Our migration problem</Eyebrow>
-              <h2 className="h2-display">For years, our leaders drove radical migration intakes. <span style={{ color: 'var(--red-500)' }}>Everyday Australians were left to suffer.</span></h2>
-              <p className="lead-p">Our Government <span className="caps">MUST</span> put Australians first. Mass migration lands hardest on the things you rely on — <strong>housing, healthcare, infrastructure</strong>, and now <strong>disability support</strong>.</p>
+              <h2 className="h2-display">They're trying to hide <span style={{ color: 'var(--red-500)' }}>the devastation mass migration is causing everyday Australians.</span></h2>
+              <p className="lead-p">The damage is real — and they'd rather you didn't see it. Mass migration lands hardest on the things you rely on: <strong>housing, healthcare, infrastructure</strong>, and now <strong>disability support</strong>.</p>
             </div>
           )}
           <div className="pressures">
             {items.map((it) => (
               <div className="pressure" key={it.idx}>
-                <div className="pressure-top">
+                <div className="pressure-media">
+                  <img src={A + it.img} alt={it.h} loading="lazy" />
                   <span className="pressure-ic"><SvgIcon name={it.icon} /></span>
                   <span className="pressure-idx">{it.idx}</span>
                 </div>
-                <div className="pressure-stat">{it.stat}</div>
-                <div className="pressure-h">{it.h}</div>
-                <p className="pressure-p">{it.p}</p>
+                <div className="pressure-body">
+                  <div className="pressure-stat">{it.stat}</div>
+                  <div className="pressure-h">{it.h}</div>
+                  <p className="pressure-p">{it.p}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -403,10 +412,10 @@
   ];
 
   const WHY_POINTS = [
-    { h: "A roof over your family's head", p: 'Runaway demand has pushed home ownership out of reach and rents to record highs. Australians should be able to afford to live in their own country.' },
-    { h: "The services you've paid for", p: "You've funded our hospitals, roads and schools your whole working life — they should serve you first, not buckle under numbers they were never built for." },
-    { h: 'Wages that keep up with life', p: 'An endless supply of cheap overseas labour holds down the pay of working Australians. Fair migration means a fair go at work.' },
-    { h: "A say in your country's future", p: 'Australians were never asked whether they wanted record migration. It is time our leaders listened to the people they serve.' },
+    { img: 'why-housing.jpg', h: "A roof over your family's head", p: 'Runaway demand has pushed home ownership out of reach and rents to record highs. Australians should be able to afford to live in their own country.' },
+    { img: 'why-services.jpg', h: "The services you've paid for", p: "You've funded our hospitals, roads and schools your whole working life — they should serve you first, not buckle under numbers they were never built for." },
+    { img: 'why-wages.jpg', h: 'Wages that keep up with life', p: 'An endless supply of cheap overseas labour holds down the pay of working Australians. Fair migration means a fair go at work.' },
+    { img: 'why-voice.jpg', h: "A say in your country's future", p: 'Australians were never asked whether they wanted record migration. It is time our leaders listened to the people they serve.' },
   ];
 
   function PetitionSection({ count, signed, pc, onSign }) {
@@ -424,7 +433,7 @@
                   <span className="pq-star"><Star size={17} color="#fff" /></span>
                   <span className="pq-label">Our petition to Canberra</span>
                 </div>
-                <p className="petition-quote-lead">We call for an immediate overhaul of Australia's migration policies so that they work in <span className="caps">our</span> best interests:</p>
+                <p className="petition-quote-lead">We call for an immediate overhaul of Australia's migration policies:</p>
                 <ol className="demand-list">
                   {DEMANDS.map((d, i) => (
                     <li className="demand-item" key={i}>
@@ -436,12 +445,12 @@
               </blockquote>
               <div className="why-fair">
                 <h3 className="why-fair-title">Why Australians deserve fair migration</h3>
-                <p className="why-fair-intro">This isn't about shutting the door — it's about a fair go for the people who call Australia home.</p>
+                <p className="why-fair-intro">This isn't about shutting the door — it's about ensuring a fair go for everyday Australians.</p>
                 <ul className="why-list">
                   {WHY_POINTS.map((w, i) => (
                     <li className="why-item" key={i}>
-                      <span className="why-ic"><CheckIcon /></span>
-                      <div><h4>{w.h}</h4><p>{w.p}</p></div>
+                      <div className="why-thumb"><img src={A + w.img} alt="" loading="lazy" /><span className="why-ic"><CheckIcon /></span></div>
+                      <div className="why-text"><h4>{w.h}</h4><p>{w.p}</p></div>
                     </li>
                   ))}
                 </ul>
@@ -525,11 +534,19 @@
         <div className="container container--wide donate-grid">
           <div className="donate-msg">
             <Eyebrow variant="light">Donate</Eyebrow>
-            <h1 className="donate-head">They have <span className="donate-billions">BILLION$</span>. We need you.</h1>
+            <h1 className="donate-head">They spend <span className="donate-billions">billions</span> selling the immigration crisis. Only you can help.</h1>
             <p className="donate-copy">
               Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar
-              puts the case for fair migration in front of more voters: ads, research, and organising on the ground.
+              puts the truth about immigration in front of more voters: ads, research, and organising on the ground.
             </p>
+            <ul className="donate-impact">
+              <li><span className="donate-impact-amt">$35</span><span>puts our message in front of <b>50 Australians</b>.</span></li>
+              <li><span className="donate-impact-amt">$65</span><span>gets <b>50 Australians</b> mail they can't ignore.</span></li>
+              <li><span className="donate-impact-amt">$135</span><span>reaches <b>500 Australians</b> who have no idea what's happening.</span></li>
+              <li><span className="donate-impact-amt">$265</span><span>connects with a <b>whole block of voters</b>.</span></li>
+              <li><span className="donate-impact-amt">$550</span><span>puts a <b>newspaper ad</b> in front of critical communities.</span></li>
+              <li><span className="donate-impact-amt">$1,500</span><span>reaches <b>5,000 Australians</b> with the truth about immigration.</span></li>
+            </ul>
             <p className="donate-trust">Stripe-secured · All amounts in AUD · Not tax-deductible</p>
           </div>
 
@@ -670,8 +687,8 @@
         <SocialProofPopup />
         <div className="foot-cta">
           <div className="container foot-cta-inner">
-            <h2>Australia's future is worth a signature.</h2>
-            <Button variant="primary" size="lg" href="petition.html">Sign the petition</Button>
+            <h2>Australia's future is on the line.</h2>
+            <Button variant="primary" size="lg" href="petition.html">Sign today ›</Button>
           </div>
         </div>
         <footer className="footer">
