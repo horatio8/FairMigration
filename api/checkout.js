@@ -21,7 +21,10 @@ function buildSessionForm({ amount, frequency, email, slug, ref, contact_id, sms
   if (PRODUCT_ID) price_data.product = PRODUCT_ID;
   else price_data.product_data = { name: 'FairMigration', description: monthly ? 'FairMigration — monthly donation' : 'FairMigration — donation' };
   if (monthly) price_data.recurring = { interval: 'month' };
-  const metadata = { org: ORG, frequency: frequency || 'oneoff', content_name: 'FairMigration', source_url: origin };
+  const dollars = Math.round(cents / 100);
+  // Human-readable label so every donation is easy to find/filter in Stripe.
+  const description = monthly ? ('FairMigration monthly donation ($' + dollars + '/mo)') : ('FairMigration donation ($' + dollars + ')');
+  const metadata = { org: ORG, campaign: 'FairMigration', frequency: frequency || 'oneoff', content_name: 'FairMigration', amount: String(dollars), source_url: origin };
   if (ref) metadata.ref = ref;
   if (contact_id) metadata.contact_id = contact_id;
   if (sms_variant) metadata.sms_variant = sms_variant;
@@ -39,7 +42,10 @@ function buildSessionForm({ amount, frequency, email, slug, ref, contact_id, sms
   };
   if (slug) form.client_reference_id = slug;
   if (email) form.customer_email = email;
-  if (monthly) form.subscription_data = { metadata };
+  // Stamp the charge/subscription itself with the description + metadata so it's
+  // filterable in the Payments/Subscriptions lists, not just on the session.
+  if (monthly) form.subscription_data = { description, metadata };
+  else form.payment_intent_data = { description, metadata };
   return form;
 }
 

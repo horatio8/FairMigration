@@ -78,6 +78,21 @@
     // On the post-donation upsell view, keep it focused — no ad gallery.
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
     const isUpsell = !!(params.get('upsell') || params.get('cs'));
+    // Arriving from the petition (#give) → drop straight onto the amount matrix.
+    useEffect(() => {
+      if (isUpsell || window.location.hash !== '#give') return undefined;
+      const t = setTimeout(() => {
+        const el = document.getElementById('give');
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY - 76;
+          window.scrollTo({
+            top: y,
+            behavior: 'smooth'
+          });
+        }
+      }, 350);
+      return () => clearTimeout(t);
+    }, []);
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "donate",
       count: count

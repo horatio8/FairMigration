@@ -352,9 +352,12 @@
         result = await signPetition({ first_name: d.firstName.trim(), last_name: d.lastName.trim(),
           email: d.email.trim(), mobile: d.mobile.trim(), postcode: d.postcode.trim(), firstName: d.firstName.trim() });
       } catch (e2) {}
-      setBusy(false);
-      if (onSign) onSign(d, result);
+      try { markSigned(d); } catch (e2) {}
       try { window.dispatchEvent(new CustomEvent('petition-signed', { detail: { first: d.firstName.trim() } })); } catch (e2) {}
+      if (onSign) onSign(d, result);
+      // Straight to the ask: land on the donate page and drop onto the amount matrix.
+      try { window.location.assign('donate.html#give'); return; } catch (e2) {}
+      setBusy(false);
     };
     return (
       <form className="pform" onSubmit={submit} noValidate>
@@ -523,10 +526,17 @@
     if (upsell) return <MonthlyUpsell sessionId={upsell} />;
 
     const [freq, setFreq] = useState('oneoff');
-    const [sel, setSel] = useState(65);
+    const [sel, setSel] = useState(135); // $135 preselected as the key amount
     const [other, setOther] = useState(false);
     const [custom, setCustom] = useState('');
     const [busy, setBusy] = useState(false);
+    // If they click an amount then hit back (bfcache), the page is restored with
+    // busy=true and every button disabled. Reset on pageshow so they can retry.
+    useEffect(() => {
+      const reset = () => setBusy(false);
+      window.addEventListener('pageshow', reset);
+      return () => window.removeEventListener('pageshow', reset);
+    }, []);
     const go = (amount) => { if (amount >= 2 && !busy) { setBusy(true); donateCheckout({ amount, frequency: freq }); } };
 
     return (
@@ -539,18 +549,9 @@
               Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar
               puts the truth about immigration in front of more voters: ads, research, and organising on the ground.
             </p>
-            <ul className="donate-impact">
-              <li><span className="donate-impact-amt">$35</span><span>puts our message in front of <b>50 Australians</b>.</span></li>
-              <li><span className="donate-impact-amt">$65</span><span>gets <b>50 Australians</b> mail they can't ignore.</span></li>
-              <li><span className="donate-impact-amt">$135</span><span>reaches <b>500 Australians</b> who have no idea what's happening.</span></li>
-              <li><span className="donate-impact-amt">$265</span><span>connects with a <b>whole block of voters</b>.</span></li>
-              <li><span className="donate-impact-amt">$550</span><span>puts a <b>newspaper ad</b> in front of critical communities.</span></li>
-              <li><span className="donate-impact-amt">$1,500</span><span>reaches <b>5,000 Australians</b> with the truth about immigration.</span></li>
-            </ul>
-            <p className="donate-trust">Stripe-secured · All amounts in AUD · Not tax-deductible</p>
           </div>
 
-          <div className="donate-card">
+          <div id="give" className="donate-card">
             <div className="donate-toggle" role="tablist">
               <button role="tab" aria-selected={freq === 'oneoff'} className={freq === 'oneoff' ? 'is-on' : ''} onClick={() => setFreq('oneoff')}>One-off</button>
               <button role="tab" aria-selected={freq === 'monthly'} className={freq === 'monthly' ? 'is-on' : ''} onClick={() => setFreq('monthly')}>Monthly</button>
@@ -571,6 +572,18 @@
               </div>
             )}
             <p className="donate-cardnote">{busy ? 'Taking you to secure checkout…' : 'Stripe-secured · All amounts in AUD · Not tax-deductible.'}</p>
+          </div>
+
+          <div className="donate-impact-wrap">
+            <ul className="donate-impact">
+              <li><span className="donate-impact-amt">$35</span><span>puts our message in front of <b>50 Australians</b>.</span></li>
+              <li><span className="donate-impact-amt">$65</span><span>gets <b>50 Australians</b> mail they can't ignore.</span></li>
+              <li><span className="donate-impact-amt">$135</span><span>reaches <b>500 Australians</b> who have no idea what's happening.</span></li>
+              <li><span className="donate-impact-amt">$265</span><span>connects with a <b>whole block of voters</b>.</span></li>
+              <li><span className="donate-impact-amt">$550</span><span>puts a <b>newspaper ad</b> in front of critical communities.</span></li>
+              <li><span className="donate-impact-amt">$1,500</span><span>reaches <b>5,000 Australians</b> with the truth about immigration.</span></li>
+            </ul>
+            <p className="donate-trust">Stripe-secured · All amounts in AUD · Not tax-deductible</p>
           </div>
         </div>
       </section>

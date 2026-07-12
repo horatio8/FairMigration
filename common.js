@@ -669,8 +669,9 @@
           firstName: d.firstName.trim()
         });
       } catch (e2) {}
-      setBusy(false);
-      if (onSign) onSign(d, result);
+      try {
+        markSigned(d);
+      } catch (e2) {}
       try {
         window.dispatchEvent(new CustomEvent('petition-signed', {
           detail: {
@@ -678,6 +679,13 @@
           }
         }));
       } catch (e2) {}
+      if (onSign) onSign(d, result);
+      // Straight to the ask: land on the donate page and drop onto the amount matrix.
+      try {
+        window.location.assign('donate.html#give');
+        return;
+      } catch (e2) {}
+      setBusy(false);
     };
     return /*#__PURE__*/React.createElement("form", {
       className: "pform",
@@ -1019,10 +1027,17 @@
       sessionId: upsell
     });
     const [freq, setFreq] = useState('oneoff');
-    const [sel, setSel] = useState(65);
+    const [sel, setSel] = useState(135); // $135 preselected as the key amount
     const [other, setOther] = useState(false);
     const [custom, setCustom] = useState('');
     const [busy, setBusy] = useState(false);
+    // If they click an amount then hit back (bfcache), the page is restored with
+    // busy=true and every button disabled. Reset on pageshow so they can retry.
+    useEffect(() => {
+      const reset = () => setBusy(false);
+      window.addEventListener('pageshow', reset);
+      return () => window.removeEventListener('pageshow', reset);
+    }, []);
     const go = amount => {
       if (amount >= 2 && !busy) {
         setBusy(true);
@@ -1047,23 +1062,8 @@
       className: "donate-billions"
     }, "billions"), " selling the immigration crisis. Only you can help beat it."), /*#__PURE__*/React.createElement("p", {
       className: "donate-copy"
-    }, "Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar puts the truth about immigration in front of more voters: ads, research, and organising on the ground."), /*#__PURE__*/React.createElement("ul", {
-      className: "donate-impact"
-    }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
-      className: "donate-impact-amt"
-    }, "$35"), /*#__PURE__*/React.createElement("span", null, "puts our message in front of ", /*#__PURE__*/React.createElement("b", null, "50 Australians"), ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
-      className: "donate-impact-amt"
-    }, "$65"), /*#__PURE__*/React.createElement("span", null, "gets ", /*#__PURE__*/React.createElement("b", null, "50 Australians"), " mail they can't ignore.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
-      className: "donate-impact-amt"
-    }, "$135"), /*#__PURE__*/React.createElement("span", null, "reaches ", /*#__PURE__*/React.createElement("b", null, "500 Australians"), " who have no idea what's happening.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
-      className: "donate-impact-amt"
-    }, "$265"), /*#__PURE__*/React.createElement("span", null, "connects with a ", /*#__PURE__*/React.createElement("b", null, "whole block of voters"), ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
-      className: "donate-impact-amt"
-    }, "$550"), /*#__PURE__*/React.createElement("span", null, "puts a ", /*#__PURE__*/React.createElement("b", null, "newspaper ad"), " in front of critical communities.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
-      className: "donate-impact-amt"
-    }, "$1,500"), /*#__PURE__*/React.createElement("span", null, "reaches ", /*#__PURE__*/React.createElement("b", null, "5,000 Australians"), " with the truth about immigration."))), /*#__PURE__*/React.createElement("p", {
-      className: "donate-trust"
-    }, "Stripe-secured · All amounts in AUD · Not tax-deductible")), /*#__PURE__*/React.createElement("div", {
+    }, "Fair Migration is funded by Australians — not corporations, not the big party machines. Every dollar puts the truth about immigration in front of more voters: ads, research, and organising on the ground.")), /*#__PURE__*/React.createElement("div", {
+      id: "give",
       className: "donate-card"
     }, /*#__PURE__*/React.createElement("div", {
       className: "donate-toggle",
@@ -1114,7 +1114,25 @@
       disabled: busy
     }, "Give", freq === 'monthly' ? ' monthly' : '', " →")), /*#__PURE__*/React.createElement("p", {
       className: "donate-cardnote"
-    }, busy ? 'Taking you to secure checkout…' : 'Stripe-secured · All amounts in AUD · Not tax-deductible.'))));
+    }, busy ? 'Taking you to secure checkout…' : 'Stripe-secured · All amounts in AUD · Not tax-deductible.')), /*#__PURE__*/React.createElement("div", {
+      className: "donate-impact-wrap"
+    }, /*#__PURE__*/React.createElement("ul", {
+      className: "donate-impact"
+    }, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$35"), /*#__PURE__*/React.createElement("span", null, "puts our message in front of ", /*#__PURE__*/React.createElement("b", null, "50 Australians"), ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$65"), /*#__PURE__*/React.createElement("span", null, "gets ", /*#__PURE__*/React.createElement("b", null, "50 Australians"), " mail they can't ignore.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$135"), /*#__PURE__*/React.createElement("span", null, "reaches ", /*#__PURE__*/React.createElement("b", null, "500 Australians"), " who have no idea what's happening.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$265"), /*#__PURE__*/React.createElement("span", null, "connects with a ", /*#__PURE__*/React.createElement("b", null, "whole block of voters"), ".")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$550"), /*#__PURE__*/React.createElement("span", null, "puts a ", /*#__PURE__*/React.createElement("b", null, "newspaper ad"), " in front of critical communities.")), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("span", {
+      className: "donate-impact-amt"
+    }, "$1,500"), /*#__PURE__*/React.createElement("span", null, "reaches ", /*#__PURE__*/React.createElement("b", null, "5,000 Australians"), " with the truth about immigration."))), /*#__PURE__*/React.createElement("p", {
+      className: "donate-trust"
+    }, "Stripe-secured · All amounts in AUD · Not tax-deductible"))));
   }
 
   /* ---------------- Post-donation monthly upsell ---------------- */
