@@ -75,10 +75,13 @@
   }
   function Page() {
     const [count] = useLiveCount();
+    // On the post-donation upsell view, keep it focused — no ad gallery.
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const isUpsell = !!(params.get('upsell') || params.get('cs'));
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "donate",
       count: count
-    }), /*#__PURE__*/React.createElement(DonateBlock, null), /*#__PURE__*/React.createElement(AdVideos, null), /*#__PURE__*/React.createElement(Footer, null));
+    }), /*#__PURE__*/React.createElement(DonateBlock, null), !isUpsell && /*#__PURE__*/React.createElement(AdVideos, null), /*#__PURE__*/React.createElement(Footer, null));
   }
   ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Page, null));
 })();

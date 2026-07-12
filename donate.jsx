@@ -44,11 +44,14 @@
 
   function Page() {
     const [count] = useLiveCount();
+    // On the post-donation upsell view, keep it focused — no ad gallery.
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const isUpsell = !!(params.get('upsell') || params.get('cs'));
     return (
       <div>
         <SiteNav active="donate" count={count} />
         <DonateBlock />
-        <AdVideos />
+        {!isUpsell && <AdVideos />}
         <Footer />
       </div>
     );
