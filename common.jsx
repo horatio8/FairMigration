@@ -255,12 +255,20 @@
     const remaining = Math.max(0, GOAL - count);
     return (
       <section className="sigbar" aria-label="Petition signature count">
+        <div className="sigbar-goal">
+          <div className="container container--wide">
+            <div className="sigbar-goal-flag"><Star size={15} color="#fff" /> Our goal</div>
+            <div className="sigbar-goal-num">{fmt(ULTIMATE_GOAL)}</div>
+            <div className="sigbar-goal-word">signatures</div>
+            <p className="sigbar-goal-sub"><b>1 million signatures</b> will force Prime Minister Albanese to address the immigration crisis.</p>
+          </div>
+        </div>
         <div className="container container--wide sigbar-inner">
           <div className="sigbar-count">
             <Star size={44} className="sigbar-star" />
             <div>
               <div className="sigbar-num">{fmt(count)}</div>
-              <div className="sigbar-label">Australians have signed</div>
+              <div className="sigbar-label">have signed so far</div>
             </div>
           </div>
           <div className="sigbar-progress">
@@ -269,19 +277,11 @@
               <span className="sigbar-bubble" style={{ left: p + '%' }}>{Math.round(p)}%</span>
             </div>
             <div className="sigbar-meta">
-              <span><b>{fmt(remaining)}</b> more to hit our next goal of {fmt(GOAL)}</span>
+              <span><b>{fmt(remaining)}</b> more to our first milestone of {fmt(GOAL)}</span>
               <span className="sigbar-live"><span className="sigbar-dot" /> Updating live</span>
             </div>
-            <div className="sigbar-mission">
-              <span className="sigbar-mission-flag"><Star size={13} color="#fff" /> The mission</span>
-              <span className="sigbar-mission-num">{fmt(ULTIMATE_GOAL)}</span>
-              <span className="sigbar-mission-word">signatures</span>
-            </div>
           </div>
-          <div className="sigbar-cta">
-            <p className="sigbar-push"><b>1 million signatures</b> will force Prime Minister Albanese to address the immigration crisis.</p>
-            <Button variant="primary" size="lg" href="petition.html">Add your name</Button>
-          </div>
+          <Button variant="primary" size="lg" href="petition.html">Add your name</Button>
         </div>
       </section>
     );

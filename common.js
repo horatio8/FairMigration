@@ -495,6 +495,21 @@
       className: "sigbar",
       "aria-label": "Petition signature count"
     }, /*#__PURE__*/React.createElement("div", {
+      className: "sigbar-goal"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "container container--wide"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "sigbar-goal-flag"
+    }, /*#__PURE__*/React.createElement(Star, {
+      size: 15,
+      color: "#fff"
+    }), " Our goal"), /*#__PURE__*/React.createElement("div", {
+      className: "sigbar-goal-num"
+    }, fmt(ULTIMATE_GOAL)), /*#__PURE__*/React.createElement("div", {
+      className: "sigbar-goal-word"
+    }, "signatures"), /*#__PURE__*/React.createElement("p", {
+      className: "sigbar-goal-sub"
+    }, /*#__PURE__*/React.createElement("b", null, "1 million signatures"), " will force Prime Minister Albanese to address the immigration crisis."))), /*#__PURE__*/React.createElement("div", {
       className: "container container--wide sigbar-inner"
     }, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-count"
@@ -505,7 +520,7 @@
       className: "sigbar-num"
     }, fmt(count)), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-label"
-    }, "Australians have signed"))), /*#__PURE__*/React.createElement("div", {
+    }, "have signed so far"))), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-progress"
     }, /*#__PURE__*/React.createElement("div", {
       className: "sigbar-track"
@@ -521,30 +536,15 @@
       }
     }, Math.round(p), "%")), /*#__PURE__*/React.createElement("div", {
       className: "sigbar-meta"
-    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, fmt(remaining)), " more to hit our next goal of ", fmt(GOAL)), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, fmt(remaining)), " more to our first milestone of ", fmt(GOAL)), /*#__PURE__*/React.createElement("span", {
       className: "sigbar-live"
     }, /*#__PURE__*/React.createElement("span", {
       className: "sigbar-dot"
-    }), " Updating live")), /*#__PURE__*/React.createElement("div", {
-      className: "sigbar-mission"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "sigbar-mission-flag"
-    }, /*#__PURE__*/React.createElement(Star, {
-      size: 13,
-      color: "#fff"
-    }), " The mission"), /*#__PURE__*/React.createElement("span", {
-      className: "sigbar-mission-num"
-    }, fmt(ULTIMATE_GOAL)), /*#__PURE__*/React.createElement("span", {
-      className: "sigbar-mission-word"
-    }, "signatures"))), /*#__PURE__*/React.createElement("div", {
-      className: "sigbar-cta"
-    }, /*#__PURE__*/React.createElement("p", {
-      className: "sigbar-push"
-    }, /*#__PURE__*/React.createElement("b", null, "1 million signatures"), " will force Prime Minister Albanese to address the immigration crisis."), /*#__PURE__*/React.createElement(Button, {
+    }), " Updating live"))), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
       href: "petition.html"
-    }, "Add your name"))));
+    }, "Add your name")));
   }
 
   /* ---------------- The problem ---------------- */
