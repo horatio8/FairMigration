@@ -239,7 +239,7 @@
           </button>
           <nav className={'site-nav-links' + (open ? ' is-open' : '')}>
             {link('problem', 'problem.html', 'Our Migration Problem')}
-            {link('map', 'map.html', "Your suburb's migration")}
+            {link('map', 'problem.html#map', "Your suburb's migration")}
             <a className="btn-sign" href="petition.html">Sign the petition ›</a>
             <Button variant="donate" size="sm" href="donate.html">Donate</Button>
           </nav>

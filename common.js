@@ -469,7 +469,7 @@
       y2: "17"
     })))), /*#__PURE__*/React.createElement("nav", {
       className: 'site-nav-links' + (open ? ' is-open' : '')
-    }, link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'map.html', "Your suburb's migration"), /*#__PURE__*/React.createElement("a", {
+    }, link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'problem.html#map', "Your suburb's migration"), /*#__PURE__*/React.createElement("a", {
       className: "btn-sign",
       href: "petition.html"
     }, "Sign the petition ›"), /*#__PURE__*/React.createElement(Button, {
