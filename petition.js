@@ -8,6 +8,7 @@
   const {
     useLiveCount,
     markSigned,
+    isSigned,
     safeGet,
     clean4,
     SiteNav,
@@ -18,7 +19,7 @@
   } = F;
   function Page() {
     const [count, setCount] = useLiveCount();
-    const [signed, setSigned] = useState(safeGet('fm_signed') === '1');
+    const [signed, setSigned] = useState(isSigned());
     const [pc, setPc] = useState(safeGet('fm_pc') || '');
     // Land visitors straight on the signature block so signing is one glance away.
     useEffect(() => {

@@ -1,5 +1,4 @@
-"use strict";
-
+/* Fair Migration — Home page */
 (function () {
   const {
     useState
@@ -8,6 +7,7 @@
   const {
     useLiveCount,
     markSigned,
+    isSigned,
     safeGet,
     clean4,
     SiteNav,
@@ -20,7 +20,7 @@
   } = F;
   function Home() {
     const [count, setCount] = useLiveCount();
-    const [signed, setSigned] = useState(safeGet('fm_signed') === '1');
+    const [signed, setSigned] = useState(isSigned());
     const [pc, setPc] = useState(safeGet('fm_pc') || '');
     const onSign = data => {
       markSigned(data);
@@ -28,19 +28,19 @@
       setCount(c => c + 1);
       setPc(clean4(data.postcode));
     };
-    return React.createElement("div", null, React.createElement(SiteNav, {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "home",
       count: count
-    }), React.createElement(Hero, {
+    }), /*#__PURE__*/React.createElement(Hero, {
       count: count
-    }), React.createElement(SignatureBar, {
+    }), /*#__PURE__*/React.createElement(SignatureBar, {
       count: count
-    }), React.createElement(Problem, null), React.createElement(PetitionSection, {
+    }), /*#__PURE__*/React.createElement(Problem, null), /*#__PURE__*/React.createElement(PetitionSection, {
       count: count,
       signed: signed,
       pc: pc,
       onSign: onSign
-    }), React.createElement(Demand, null), React.createElement(Footer, null));
+    }), /*#__PURE__*/React.createElement(Demand, null), /*#__PURE__*/React.createElement(Footer, null));
   }
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Home, null));
+  ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Home, null));
 })();

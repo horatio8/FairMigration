@@ -19,9 +19,21 @@
 
   function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  const SIGNED_TTL_MS = 12 * 60 * 60 * 1000; // hold the "signed" state for 12 hours
   function markSigned(data) {
     safeSet('fm_signed', '1');
+    safeSet('fm_signed_at', String(Date.now()));
     if (data && data.postcode) safeSet('fm_pc', clean4(data.postcode));
+  }
+  // Signed only counts for 12 hours; after that it self-resets so they can sign again.
+  function isSigned() {
+    if (safeGet('fm_signed') !== '1') return false;
+    const at = parseInt(safeGet('fm_signed_at') || '0', 10);
+    if (!at || (Date.now() - at) > SIGNED_TTL_MS) {
+      try { localStorage.removeItem('fm_signed'); localStorage.removeItem('fm_signed_at'); localStorage.removeItem('fm_pc'); } catch (e) {}
+      return false;
+    }
+    return true;
   }
 
   /* ---------- config (override per-site by setting window.FM_CONFIG before this script) ---------- */
@@ -104,7 +116,7 @@
      then refreshes periodically so it stays live. */
   function useLiveCount() {
     const cached = parseInt(safeGet('fm_sig_count') || '0', 10);
-    const seed = (cached > 0 ? cached : CFG.signatureFallback) + (safeGet('fm_signed') === '1' ? 1 : 0);
+    const seed = (cached > 0 ? cached : CFG.signatureFallback) + (isSigned() ? 1 : 0);
     const [count, setCount] = useState(seed);
     useEffect(() => {
       let live = true;
@@ -197,7 +209,7 @@
     );
     // Strip the header to just the logo on the monthly-upsell page, and for anyone
     // who has already signed the petition (top bar + menu removed; logo → home).
-    const hasSigned = typeof window !== 'undefined' && safeGet('fm_signed') === '1';
+    const hasSigned = typeof window !== 'undefined' && isSigned();
     if (minimal || hasSigned) {
       return (
         <div className="site-top">
@@ -773,7 +785,7 @@
   }
 
   window.FM = {
-    A, GOAL, CFG, fmt, pct, clean4, safeGet, safeSet, markSigned, useLiveCount,
+    A, GOAL, CFG, fmt, pct, clean4, safeGet, safeSet, markSigned, isSigned, useLiveCount,
     getAttr, captureAttribution, signPetition, appendClientRef,
     Eyebrow, Star, SiteNav, Hero, SignatureBar, Problem, PetitionForm, PetitionSection,
     MapStage, Demand, DonateBlock, PageHead, Footer,
