@@ -626,7 +626,7 @@
   /* ---------------- Petition form (first/last/email/mobile/postcode) ---------------- */
   function PetitionForm({
     onSign,
-    cta = 'Sign the petition'
+    cta = 'Add your signature ›'
   }) {
     const [d, setD] = useState({
       firstName: '',
@@ -637,6 +637,22 @@
     });
     const [err, setErr] = useState({});
     const [busy, setBusy] = useState(false);
+    const [pcHint, setPcHint] = useState('2000');
+    // Adapt the postcode to the signer's state (from Vercel edge geo): NSW→2xxx, VIC→3xxx, …
+    useEffect(() => {
+      let live = true;
+      fetch('/api/geo').then(r => r.ok ? r.json() : null).then(j => {
+        if (!live || !j || !j.sample_postcode) return;
+        setPcHint(j.sample_postcode);
+        setD(s => s.postcode ? s : {
+          ...s,
+          postcode: j.sample_postcode
+        });
+      }).catch(() => {});
+      return () => {
+        live = false;
+      };
+    }, []);
     const set = k => e => {
       const v = e.target.value;
       setD(s => ({
@@ -741,7 +757,7 @@
     }), /*#__PURE__*/React.createElement(Input, {
       label: "Postcode",
       name: "postcode",
-      placeholder: "2000",
+      placeholder: pcHint,
       value: d.postcode,
       onChange: set('postcode'),
       inputMode: "numeric",
@@ -826,13 +842,78 @@
       d: "M20 6 9 17l-5-5"
     }));
   }
+
+  /* icon marks for the three demands: reduce (down arrow), review (magnifier), Australia (flag) */
+  function DemandIcon({
+    name
+  }) {
+    const s = {
+      fill: 'none',
+      stroke: '#fff',
+      strokeWidth: 2.2,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round'
+    };
+    if (name === 'down') return /*#__PURE__*/React.createElement("svg", {
+      width: "18",
+      height: "18",
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("g", s, /*#__PURE__*/React.createElement("line", {
+      x1: "12",
+      y1: "4",
+      x2: "12",
+      y2: "18"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M6 12l6 6 6-6"
+    })));
+    if (name === 'search') return /*#__PURE__*/React.createElement("svg", {
+      width: "18",
+      height: "18",
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("g", s, /*#__PURE__*/React.createElement("circle", {
+      cx: "10.5",
+      cy: "10.5",
+      r: "6.3"
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: "20.5",
+      y1: "20.5",
+      x2: "15",
+      y2: "15"
+    })));
+    // flag on a pole with a small Commonwealth-style star
+    return /*#__PURE__*/React.createElement("svg", {
+      width: "18",
+      height: "18",
+      viewBox: "0 0 24 24",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("line", {
+      x1: "5",
+      y1: "3",
+      x2: "5",
+      y2: "22",
+      stroke: "#fff",
+      strokeWidth: "2.2",
+      strokeLinecap: "round"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M5.6 3.5 H18.5 V11.5 H5.6 Z",
+      fill: "#fff"
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "11,5.3 11.47,6.55 12.81,6.61 11.76,7.45 12.12,8.74 11,8 9.88,8.74 10.24,7.45 9.19,6.61 10.53,6.55",
+      fill: "var(--navy-700)"
+    }));
+  }
   const DEMANDS = [{
+    icon: 'down',
     h: 'An immediate reduction in the migration intake',
     p: 'Bring numbers back to a level our housing, hospitals and infrastructure can actually sustain.'
   }, {
+    icon: 'search',
     h: 'A full review of a broken system',
     p: 'An honest, independent audit of a migration policy that has been left unchecked for years.'
   }, {
+    icon: 'flag',
     h: 'Australians first — always',
     p: 'A system run in the interests of the Australians who built this country and pay for its services.'
   }];
@@ -903,7 +984,9 @@
       key: i
     }, /*#__PURE__*/React.createElement("span", {
       className: "demand-num"
-    }, i + 1), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(DemandIcon, {
+      name: d.icon
+    })), /*#__PURE__*/React.createElement("div", {
       className: "demand-body"
     }, /*#__PURE__*/React.createElement("h4", null, d.h), /*#__PURE__*/React.createElement("p", null, d.p)))))), /*#__PURE__*/React.createElement("div", {
       className: "why-fair"
