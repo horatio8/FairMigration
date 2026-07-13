@@ -95,8 +95,11 @@
     }, []);
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "donate",
-      count: count
-    }), /*#__PURE__*/React.createElement(DonateBlock, null), !isUpsell && /*#__PURE__*/React.createElement(AdVideos, null), /*#__PURE__*/React.createElement(Footer, null));
+      count: count,
+      minimal: isUpsell
+    }), /*#__PURE__*/React.createElement(DonateBlock, null), !isUpsell && /*#__PURE__*/React.createElement(AdVideos, null), /*#__PURE__*/React.createElement(Footer, {
+      hideCta: isUpsell
+    }));
   }
   ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Page, null));
 })();

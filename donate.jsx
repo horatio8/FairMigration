@@ -58,10 +58,10 @@
     }, []);
     return (
       <div>
-        <SiteNav active="donate" count={count} />
+        <SiteNav active="donate" count={count} minimal={isUpsell} />
         <DonateBlock />
         {!isUpsell && <AdVideos />}
-        <Footer />
+        <Footer hideCta={isUpsell} />
       </div>
     );
   }

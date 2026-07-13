@@ -370,7 +370,8 @@
   /* ---------------- sticky top: utility bar + custom header ---------------- */
   function SiteNav({
     active,
-    count
+    count,
+    minimal
   }) {
     const [open, setOpen] = useState(false);
     const link = (key, href, label) => /*#__PURE__*/React.createElement("a", {
@@ -378,6 +379,22 @@
       href: href,
       onClick: () => setOpen(false)
     }, label);
+    // Strip the header to just the logo on the monthly-upsell page, and for anyone
+    // who has already signed the petition (top bar + menu removed; logo → home).
+    const hasSigned = typeof window !== 'undefined' && safeGet('fm_signed') === '1';
+    if (minimal || hasSigned) {
+      return /*#__PURE__*/React.createElement("div", {
+        className: "site-top"
+      }, /*#__PURE__*/React.createElement("header", {
+        className: "site-nav site-nav--minimal"
+      }, /*#__PURE__*/React.createElement("a", {
+        className: "site-nav-brand",
+        href: "index.html"
+      }, /*#__PURE__*/React.createElement("img", {
+        src: A + 'logo-full.png',
+        alt: "Fair Migration"
+      }))));
+    }
     return /*#__PURE__*/React.createElement("div", {
       className: "site-top"
     }, /*#__PURE__*/React.createElement("div", {
@@ -1401,8 +1418,10 @@
   }
 
   /* ---------------- Footer ---------------- */
-  function Footer() {
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SocialProofPopup, null), /*#__PURE__*/React.createElement("div", {
+  function Footer({
+    hideCta
+  }) {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SocialProofPopup, null), !hideCta && /*#__PURE__*/React.createElement("div", {
       className: "foot-cta"
     }, /*#__PURE__*/React.createElement("div", {
       className: "container foot-cta-inner"

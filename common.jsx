@@ -190,11 +190,23 @@
   }
 
   /* ---------------- sticky top: utility bar + custom header ---------------- */
-  function SiteNav({ active, count }) {
+  function SiteNav({ active, count, minimal }) {
     const [open, setOpen] = useState(false);
     const link = (key, href, label) => (
       <a className={'navlink' + (active === key ? ' is-active' : '')} href={href} onClick={() => setOpen(false)}>{label}</a>
     );
+    // Strip the header to just the logo on the monthly-upsell page, and for anyone
+    // who has already signed the petition (top bar + menu removed; logo → home).
+    const hasSigned = typeof window !== 'undefined' && safeGet('fm_signed') === '1';
+    if (minimal || hasSigned) {
+      return (
+        <div className="site-top">
+          <header className="site-nav site-nav--minimal">
+            <a className="site-nav-brand" href="index.html"><img src={A + 'logo-full.png'} alt="Fair Migration" /></a>
+          </header>
+        </div>
+      );
+    }
     return (
       <div className="site-top">
         <div className="util-bar">
@@ -724,16 +736,18 @@
   }
 
   /* ---------------- Footer ---------------- */
-  function Footer() {
+  function Footer({ hideCta }) {
     return (
       <React.Fragment>
         <SocialProofPopup />
-        <div className="foot-cta">
-          <div className="container foot-cta-inner">
-            <h2>Australia's future is on the line.</h2>
-            <Button variant="primary" size="lg" href="petition.html">Sign today ›</Button>
+        {!hideCta && (
+          <div className="foot-cta">
+            <div className="container foot-cta-inner">
+              <h2>Australia's future is on the line.</h2>
+              <Button variant="primary" size="lg" href="petition.html">Sign today ›</Button>
+            </div>
           </div>
-        </div>
+        )}
         <footer className="footer">
           <div className="container" style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
             <a href="index.html"><img src={A + 'logo-full.png'} alt="Fair Migration" style={{ height: '52px' }} /></a>
