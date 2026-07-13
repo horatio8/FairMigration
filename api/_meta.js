@@ -60,4 +60,10 @@ function sendEvent({ event_name, event_id, event_source_url, action_source = 'we
   });
 }
 
-module.exports = { sendEvent, userData };
+// Non-secret diagnostic: which Meta env is present, and whether events are being
+// tagged as test events (which keeps them OUT of production ads reporting).
+function configStatus() {
+  return { pixel_id_set: !!PIXEL_ID, capi_token_set: !!CAPI_TOKEN, test_event_code_active: !!TEST_CODE };
+}
+
+module.exports = { sendEvent, userData, configStatus };

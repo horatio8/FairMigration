@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
     const [metaResult] = await Promise.all([metaResultP, smsP, cnP]);
 
     const out = { success: true, contact_id: contact.contact_id, referral_code, meta_event_id, is_new_contact: contact.isNew };
-    if (body.debug) out.meta = metaResult; // diagnostic echo of the CAPI response
+    if (body.debug) { out.meta = metaResult; out.meta_config = meta.configStatus(); } // diagnostic echo of the CAPI response + env config
     return send(res, 200, out);
   } catch (err) {
     return send(res, 500, { error: String(err.message || err) });
