@@ -7,6 +7,7 @@
   const DS = window.FairMigrationDesignSystem_e28435;
   const { SiteNav, Footer, PageHead, Star, useLiveCount, CFG, safeGet } = F;
   const { Input, Button } = DS;
+  const API = CFG.apiBase || '';
 
   const PLATFORMS = [
     { id: 'facebook', label: 'Share on Facebook', bg: '#1877F2' },
@@ -17,7 +18,7 @@
     { id: 'copy', label: 'Copy link', bg: '#4B5563' },
   ];
 
-  function shareUrlFor(code) { return CFG.origin + '/petition?ref=' + encodeURIComponent(code); }
+  function shareUrlFor(code) { return CFG.origin + (CFG.sharePath || '/petition') + '?ref=' + encodeURIComponent(code); }
   function shareText(count) {
     return 'I just signed the Fair Migration petition — ' + (count || 'thousands of') +
       ' Australians are demanding our government put Australians first. Add your name:';
@@ -29,7 +30,7 @@
     if (!window.fbq || !sessionId) return;
     const key = 'ff_pixel_purchase_' + sessionId;
     try { if (sessionStorage.getItem(key)) return; } catch (e) {}
-    fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    fetch(API + '/api/checkout?session_id=' + encodeURIComponent(sessionId)).then((r) => (r.ok ? r.json() : null)).then((j) => {
       const s = j && j.session;
       if (!s || !s.paid) return;
       try { sessionStorage.setItem(key, '1'); } catch (e) {}
@@ -45,7 +46,7 @@
 
     function record(platform) {
       try {
-        fetch('/api/share-issued', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        fetch(API + '/api/share-issued', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ referral_code: code, platform, share_url: url }), keepalive: true });
       } catch (e) {}
       const next = Array.from(new Set(used.concat(platform)));
@@ -95,7 +96,7 @@
       setErr(n); if (Object.keys(n).length) return;
       setBusy(true);
       try {
-        const r = await fetch('/api/share-signup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        const r = await fetch(API + '/api/share-signup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ first_name: d.firstName.trim(), last_name: d.lastName.trim(), email: d.email.trim(), mobile: d.mobile.trim(), postcode: d.postcode.trim() }) });
         const j = await r.json();
         if (j && j.success) { try { localStorage.setItem('ff_referral_code', j.referral_code); localStorage.setItem('ff_first_name', j.first_name || d.firstName); } catch (e2) {} onReady({ referral_code: j.referral_code, first_name: j.first_name || d.firstName }); return; }
@@ -135,7 +136,7 @@
         setState('polling');
         const tick = () => {
           pollRef.current += 1;
-          fetch('/api/share-context?session_id=' + encodeURIComponent(sessionId))
+          fetch(API + '/api/share-context?session_id=' + encodeURIComponent(sessionId))
             .then((r) => (r.ok ? r.json() : Promise.reject()))
             .then((j) => ready({ referral_code: j.referral_code, first_name: j.first_name }))
             .catch(() => { if (pollRef.current >= 15) setState('ask'); else setTimeout(tick, 2000); });
@@ -145,7 +146,7 @@
       }
       if (localCode) { ready({ referral_code: localCode, first_name: safeGet('ff_first_name') || '' }); return; }
       if (emailParam) {
-        fetch('/api/share-context?email=' + encodeURIComponent(emailParam))
+        fetch(API + '/api/share-context?email=' + encodeURIComponent(emailParam))
           .then((r) => (r.ok ? r.json() : Promise.reject()))
           .then((j) => ready({ referral_code: j.referral_code, first_name: j.first_name }))
           .catch(() => setState('ask'));
@@ -158,7 +159,7 @@
 
     return (
       <div>
-        <SiteNav active="share" count={count} />
+        <SiteNav active="share" count={count} minimal={CFG.minimalChrome} />
         <PageHead eyebrow="Thank you" title={state === 'ready' ? ('Thank you, ' + first + '.') : 'Thank you for standing up.'}
           lead="Every share brings more Australians to the cause. Send your link — the petition you signed becomes their landing page." />
         <section className="section">
@@ -186,7 +187,7 @@
             )}
           </div>
         </section>
-        <Footer />
+        <Footer minimal={CFG.minimalChrome} />
       </div>
     );
   }

@@ -18,7 +18,9 @@
     Badge,
     Input
   } = DS;
-  const A = 'assets/';
+  // Assets can be served from another origin (used by the microsite, which loads
+  // the brand + assets from the main site). Defaults to the local /assets folder.
+  const A = typeof window !== 'undefined' && window.FM_CONFIG && window.FM_CONFIG.assetBase || 'assets/';
   const GOAL = 50000; // near-term target
   const ULTIMATE_GOAL = 1000000; // the million-signature ambition
 
@@ -67,8 +69,18 @@
     // Placeholder shown for the split-second before the real count loads. The real
     // number (actual signatures + the SIGNATURE_BASE_OFFSET buffer set in Vercel)
     // comes from /api/signature-count; this only avoids a flash of an empty value.
-    signatureFallback: 1800
+    signatureFallback: 1800,
+    apiBase: '',
+    // '' = same-origin; the microsite points this at the main site
+    afterSignUrl: 'donate.html#give',
+    // where the sign form sends people next
+    sharePath: '/petition',
+    // path a referral link points at (microsite uses '/')
+    signHref: 'petition.html',
+    // target for "Add your name" CTAs (microsite uses '#sign')
+    minimalChrome: false // logo-only nav + footer (microsite)
   }, window.FM_CONFIG || {});
+  const API = CFG.apiBase || ''; // prefix for first-party API calls
 
   /* ---------- attribution capture (sessionStorage) + share-click beacon ---------- */
   const ATTR_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid', 'ttclid', 'li_fat_id', 'msclkid', 'twclid', 'sccid', 'ad_id', 'adset_id', 'campaign_id', 'placement', 'ref'];
@@ -118,7 +130,7 @@
       sessionStorage.setItem(key, '1');
     } catch (e) {}
     try {
-      fetch('/api/share-click', {
+      fetch(API + '/api/share-click', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -155,7 +167,7 @@
     });
     let result = null;
     try {
-      const r = await fetch('/api/petition-signup', {
+      const r = await fetch(API + '/api/petition-signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -206,7 +218,7 @@
     const [count, setCount] = useState(seed);
     useEffect(() => {
       let live = true;
-      const load = () => fetch('/api/signature-count').then(r => r.ok ? r.json() : null).then(j => {
+      const load = () => fetch(API + '/api/signature-count').then(r => r.ok ? r.json() : null).then(j => {
         if (live && j && typeof j.count === 'number') {
           setCount(j.count);
           safeSet('fm_sig_count', String(j.count));
@@ -256,7 +268,7 @@
       utm_content: a.utm_content
     };
     try {
-      const r = await fetch('/api/checkout', {
+      const r = await fetch(API + '/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -282,7 +294,7 @@
     if (_partialFired) return;
     _partialFired = true;
     try {
-      fetch('/api/partial', {
+      fetch(API + '/api/partial', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -576,7 +588,7 @@
     }), " Updating live"))), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
-      href: "petition.html"
+      href: CFG.signHref
     }, "Add your name")));
   }
 
@@ -674,7 +686,7 @@
     // Adapt the postcode to the signer's state (from Vercel edge geo): NSW→2xxx, VIC→3xxx, …
     useEffect(() => {
       let live = true;
-      fetch('/api/geo').then(r => r.ok ? r.json() : null).then(j => {
+      fetch(API + '/api/geo').then(r => r.ok ? r.json() : null).then(j => {
         if (!live || !j || !j.sample_postcode) return;
         setPcHint(j.sample_postcode);
         setD(s => s.postcode ? s : {
@@ -729,9 +741,9 @@
         }));
       } catch (e2) {}
       if (onSign) onSign(d, result);
-      // Straight to the ask: land on the donate page and drop onto the amount matrix.
+      // Straight to the ask (donate matrix on the main site, or the share page on the microsite).
       try {
-        window.location.assign('donate.html#give');
+        window.location.assign(CFG.afterSignUrl || 'donate.html#give');
         return;
       } catch (e2) {}
       setBusy(false);
@@ -1127,7 +1139,7 @@
     }, "broken"), ", unsustainable and putting an unfair strain on Australians."), /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       size: "lg",
-      href: "petition.html"
+      href: CFG.signHref
     }, "Add your name"))));
   }
 
@@ -1259,7 +1271,7 @@
     const [busy, setBusy] = useState(false);
     useEffect(() => {
       let live = true;
-      fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : null).then(j => {
+      fetch(API + '/api/checkout?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : null).then(j => {
         if (live && j && j.session) setAmt(Math.round((j.session.amount_total || 0) / 100));
       }).catch(() => {});
       return () => {
@@ -1435,8 +1447,33 @@
 
   /* ---------------- Footer ---------------- */
   function Footer({
-    hideCta
+    hideCta,
+    minimal
   }) {
+    if (minimal) {
+      return /*#__PURE__*/React.createElement("footer", {
+        className: "footer footer--minimal"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "container",
+        style: {
+          textAlign: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("a", {
+        href: "index.html"
+      }, /*#__PURE__*/React.createElement("img", {
+        src: A + 'logo-full.png',
+        alt: "Fair Migration",
+        style: {
+          height: '46px'
+        }
+      })), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginTop: '16px',
+          fontSize: '12px',
+          color: 'var(--ink-400)'
+        }
+      }, "© 2026 Fair Migration. All rights reserved.")));
+    }
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SocialProofPopup, null), !hideCta && /*#__PURE__*/React.createElement("div", {
       className: "foot-cta"
     }, /*#__PURE__*/React.createElement("div", {

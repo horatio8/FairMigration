@@ -386,6 +386,7 @@ section[id] { scroll-margin-top: 116px; }
 
 /* ---------- footer ---------- */
 .footer { border-top: 1px solid var(--line-200); padding: 48px 0 56px; background: var(--mist-50); }
+.footer--minimal { padding: 44px 0; }
 .footer a { text-decoration: none; }
 .footer a:hover { color: var(--navy-700); }
 .social { display: flex; gap: 18px; }

@@ -22,6 +22,7 @@
     Input,
     Button
   } = DS;
+  const API = CFG.apiBase || '';
   const PLATFORMS = [{
     id: 'facebook',
     label: 'Share on Facebook',
@@ -48,7 +49,7 @@
     bg: '#4B5563'
   }];
   function shareUrlFor(code) {
-    return CFG.origin + '/petition?ref=' + encodeURIComponent(code);
+    return CFG.origin + (CFG.sharePath || '/petition') + '?ref=' + encodeURIComponent(code);
   }
   function shareText(count) {
     return 'I just signed the Fair Migration petition — ' + (count || 'thousands of') + ' Australians are demanding our government put Australians first. Add your name:';
@@ -68,7 +69,7 @@
     try {
       if (sessionStorage.getItem(key)) return;
     } catch (e) {}
-    fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : null).then(j => {
+    fetch(API + '/api/checkout?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : null).then(j => {
       const s = j && j.session;
       if (!s || !s.paid) return;
       try {
@@ -94,7 +95,7 @@
     const [copied, setCopied] = useState(false);
     function record(platform) {
       try {
-        fetch('/api/share-issued', {
+        fetch(API + '/api/share-issued', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -176,7 +177,7 @@
       if (Object.keys(n).length) return;
       setBusy(true);
       try {
-        const r = await fetch('/api/share-signup', {
+        const r = await fetch(API + '/api/share-signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -283,7 +284,7 @@
         setState('polling');
         const tick = () => {
           pollRef.current += 1;
-          fetch('/api/share-context?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : Promise.reject()).then(j => ready({
+          fetch(API + '/api/share-context?session_id=' + encodeURIComponent(sessionId)).then(r => r.ok ? r.json() : Promise.reject()).then(j => ready({
             referral_code: j.referral_code,
             first_name: j.first_name
           })).catch(() => {
@@ -301,7 +302,7 @@
         return;
       }
       if (emailParam) {
-        fetch('/api/share-context?email=' + encodeURIComponent(emailParam)).then(r => r.ok ? r.json() : Promise.reject()).then(j => ready({
+        fetch(API + '/api/share-context?email=' + encodeURIComponent(emailParam)).then(r => r.ok ? r.json() : Promise.reject()).then(j => ready({
           referral_code: j.referral_code,
           first_name: j.first_name
         })).catch(() => setState('ask'));
@@ -312,7 +313,8 @@
     const first = ctx && ctx.first_name ? ctx.first_name : 'friend';
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SiteNav, {
       active: "share",
-      count: count
+      count: count,
+      minimal: CFG.minimalChrome
     }), /*#__PURE__*/React.createElement(PageHead, {
       eyebrow: "Thank you",
       title: state === 'ready' ? 'Thank you, ' + first + '.' : 'Thank you for standing up.',
@@ -352,7 +354,9 @@
     }, /*#__PURE__*/React.createElement("code", null, shareUrlFor(ctx.referral_code))), /*#__PURE__*/React.createElement(ShareButtons, {
       code: ctx.referral_code,
       count: count.toLocaleString()
-    })))), /*#__PURE__*/React.createElement(Footer, null));
+    })))), /*#__PURE__*/React.createElement(Footer, {
+      minimal: CFG.minimalChrome
+    }));
   }
   ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(ShareApp, null));
 })();

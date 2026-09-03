@@ -9,7 +9,9 @@
   const { useState, useEffect, useRef } = React;
   const DS = window.FairMigrationDesignSystem_e28435;
   const { Button, Card, Badge, Input } = DS;
-  const A = 'assets/';
+  // Assets can be served from another origin (used by the microsite, which loads
+  // the brand + assets from the main site). Defaults to the local /assets folder.
+  const A = (typeof window !== 'undefined' && window.FM_CONFIG && window.FM_CONFIG.assetBase) || 'assets/';
   const GOAL = 50000;          // near-term target
   const ULTIMATE_GOAL = 1000000; // the million-signature ambition
 
@@ -45,7 +47,13 @@
     // number (actual signatures + the SIGNATURE_BASE_OFFSET buffer set in Vercel)
     // comes from /api/signature-count; this only avoids a flash of an empty value.
     signatureFallback: 1800,
+    apiBase: '',                    // '' = same-origin; the microsite points this at the main site
+    afterSignUrl: 'donate.html#give', // where the sign form sends people next
+    sharePath: '/petition',         // path a referral link points at (microsite uses '/')
+    signHref: 'petition.html',      // target for "Add your name" CTAs (microsite uses '#sign')
+    minimalChrome: false,           // logo-only nav + footer (microsite)
   }, window.FM_CONFIG || {});
+  const API = CFG.apiBase || '';    // prefix for first-party API calls
 
   /* ---------- attribution capture (sessionStorage) + share-click beacon ---------- */
   const ATTR_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
@@ -71,7 +79,7 @@
     const key = 'ff_ref_click_fired_' + ref;
     try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
     try {
-      fetch('/api/share-click', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      fetch(API + '/api/share-click', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ref, source_url: window.location.href, fbclid: a.fbclid }), keepalive: true });
     } catch (e) {}
   }
@@ -89,7 +97,7 @@
     });
     let result = null;
     try {
-      const r = await fetch('/api/petition-signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await fetch(API + '/api/petition-signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (r.ok) result = await r.json();
     } catch (e) {}
     if (result && result.success) {
@@ -120,7 +128,7 @@
     const [count, setCount] = useState(seed);
     useEffect(() => {
       let live = true;
-      const load = () => fetch('/api/signature-count')
+      const load = () => fetch(API + '/api/signature-count')
         .then((r) => (r.ok ? r.json() : null))
         .then((j) => { if (live && j && typeof j.count === 'number') { setCount(j.count); safeSet('fm_sig_count', String(j.count)); } })
         .catch(() => {});
@@ -152,7 +160,7 @@
       utm_source: a.utm_source, utm_medium: a.utm_medium, utm_campaign: a.utm_campaign, utm_term: a.utm_term, utm_content: a.utm_content,
     };
     try {
-      const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await r.json();
       if (j && j.url) { window.location.href = j.url; return; }
     } catch (e) {}
@@ -165,7 +173,7 @@
   function firePartial(form, data) {
     if (_partialFired) return; _partialFired = true;
     try {
-      fetch('/api/partial', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      fetch(API + '/api/partial', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(Object.assign({ form }, data)), keepalive: true });
     } catch (e) {}
   }
@@ -305,7 +313,7 @@
               <span className="sigbar-live"><span className="sigbar-dot" /> Updating live</span>
             </div>
           </div>
-          <Button variant="primary" size="lg" href="petition.html">Add your name</Button>
+          <Button variant="primary" size="lg" href={CFG.signHref}>Add your name</Button>
         </div>
       </section>
     );
@@ -359,7 +367,7 @@
     // Adapt the postcode to the signer's state (from Vercel edge geo): NSW→2xxx, VIC→3xxx, …
     useEffect(() => {
       let live = true;
-      fetch('/api/geo').then((r) => (r.ok ? r.json() : null)).then((j) => {
+      fetch(API + '/api/geo').then((r) => (r.ok ? r.json() : null)).then((j) => {
         if (!live || !j || !j.sample_postcode) return;
         setPcHint(j.sample_postcode);
         setD((s) => (s.postcode ? s : { ...s, postcode: j.sample_postcode }));
@@ -390,8 +398,8 @@
       try { markSigned(d); } catch (e2) {}
       try { window.dispatchEvent(new CustomEvent('petition-signed', { detail: { first: d.firstName.trim() } })); } catch (e2) {}
       if (onSign) onSign(d, result);
-      // Straight to the ask: land on the donate page and drop onto the amount matrix.
-      try { window.location.assign('donate.html#give'); return; } catch (e2) {}
+      // Straight to the ask (donate matrix on the main site, or the share page on the microsite).
+      try { window.location.assign(CFG.afterSignUrl || 'donate.html#give'); return; } catch (e2) {}
       setBusy(false);
     };
     return (
@@ -563,7 +571,7 @@
               We demand an <span className="r">immediate overhaul</span> of Australia's migration system.
               The current system is <span className="n">broken</span>, unsustainable and putting an unfair strain on Australians.
             </p>
-            <Button variant="primary" size="lg" href="petition.html">Add your name</Button>
+            <Button variant="primary" size="lg" href={CFG.signHref}>Add your name</Button>
           </div>
         </div>
       </section>
@@ -650,7 +658,7 @@
     const [busy, setBusy] = useState(false);
     useEffect(() => {
       let live = true;
-      fetch('/api/checkout?session_id=' + encodeURIComponent(sessionId)).then((r) => (r.ok ? r.json() : null))
+      fetch(API + '/api/checkout?session_id=' + encodeURIComponent(sessionId)).then((r) => (r.ok ? r.json() : null))
         .then((j) => { if (live && j && j.session) setAmt(Math.round((j.session.amount_total || 0) / 100)); }).catch(() => {});
       return () => { live = false; };
     }, []);
@@ -748,7 +756,17 @@
   }
 
   /* ---------------- Footer ---------------- */
-  function Footer({ hideCta }) {
+  function Footer({ hideCta, minimal }) {
+    if (minimal) {
+      return (
+        <footer className="footer footer--minimal">
+          <div className="container" style={{ textAlign: 'center' }}>
+            <a href="index.html"><img src={A + 'logo-full.png'} alt="Fair Migration" style={{ height: '46px' }} /></a>
+            <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--ink-400)' }}>&copy; 2026 Fair Migration. All rights reserved.</div>
+          </div>
+        </footer>
+      );
+    }
     return (
       <React.Fragment>
         <SocialProofPopup />
