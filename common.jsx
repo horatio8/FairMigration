@@ -254,8 +254,10 @@
             </svg>
           </button>
           <nav className={'site-nav-links' + (open ? ' is-open' : '')}>
+            {link('fight', 'the-fight.html', 'The fight')}
             {link('problem', 'problem.html', 'Our Migration Problem')}
             {link('map', 'problem.html#map', "Your suburb's migration")}
+            {link('news', 'news.html', 'News')}
             <a className="btn-sign" href="petition.html">Sign the petition ›</a>
             <Button variant="donate" size="sm" href="donate.html">Donate</Button>
           </nav>
@@ -813,11 +815,15 @@
           <div className="container" style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
             <a href="index.html"><img src={A + 'logo-full.png'} alt="Fair Migration" style={{ height: '52px' }} /></a>
             <nav style={{ display: 'flex', gap: '24px', fontSize: '14px', fontWeight: 600, whiteSpace: 'nowrap', flexWrap: 'wrap' }}>
+              <a href="the-fight.html">The fight</a>
               <a href="problem.html">The problem</a>
               <a href="map.html">Impact map</a>
+              <a href="news.html">News</a>
               <a href="petition.html">Sign</a>
               <a href="donate.html">Donate</a>
+              <a href="volunteer.html">Volunteer</a>
               <a href="about.html">About</a>
+              <a href="media.html">Media</a>
               <a href="contact.html">Contact</a>
               <a href="#">Privacy Policy</a>
             </nav>

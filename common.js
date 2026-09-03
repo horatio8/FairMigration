@@ -493,7 +493,7 @@
       y2: "17"
     })))), /*#__PURE__*/React.createElement("nav", {
       className: 'site-nav-links' + (open ? ' is-open' : '')
-    }, link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'problem.html#map', "Your suburb's migration"), /*#__PURE__*/React.createElement("a", {
+    }, link('fight', 'the-fight.html', 'The fight'), link('problem', 'problem.html', 'Our Migration Problem'), link('map', 'problem.html#map', "Your suburb's migration"), link('news', 'news.html', 'News'), /*#__PURE__*/React.createElement("a", {
       className: "btn-sign",
       href: "petition.html"
     }, "Sign the petition ›"), /*#__PURE__*/React.createElement(Button, {
@@ -1562,16 +1562,24 @@
         flexWrap: 'wrap'
       }
     }, /*#__PURE__*/React.createElement("a", {
+      href: "the-fight.html"
+    }, "The fight"), /*#__PURE__*/React.createElement("a", {
       href: "problem.html"
     }, "The problem"), /*#__PURE__*/React.createElement("a", {
       href: "map.html"
     }, "Impact map"), /*#__PURE__*/React.createElement("a", {
+      href: "news.html"
+    }, "News"), /*#__PURE__*/React.createElement("a", {
       href: "petition.html"
     }, "Sign"), /*#__PURE__*/React.createElement("a", {
       href: "donate.html"
     }, "Donate"), /*#__PURE__*/React.createElement("a", {
+      href: "volunteer.html"
+    }, "Volunteer"), /*#__PURE__*/React.createElement("a", {
       href: "about.html"
     }, "About"), /*#__PURE__*/React.createElement("a", {
+      href: "media.html"
+    }, "Media"), /*#__PURE__*/React.createElement("a", {
       href: "contact.html"
     }, "Contact"), /*#__PURE__*/React.createElement("a", {
       href: "#"
