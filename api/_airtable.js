@@ -30,15 +30,23 @@ function configured() { return !!(API_KEY && BASE_ID); }
 const uuid = () => crypto.randomUUID();
 const nowISO = () => new Date().toISOString();
 
-/* ---------- low-level REST ---------- */
-function atRequest(method, table, { recordId, query, body } = {}) {
+/* ---------- low-level REST ----------
+   Airtable allows 5 requests/second per base and answers 429 above that. Under a
+   burst of signups that ceiling is reached instantly, so every call is retried
+   with exponential backoff + jitter (honouring Retry-After) and hard-timed-out,
+   and callers treat Airtable as best-effort — never as the capture of record. */
+const AT_TIMEOUT_MS = parseInt(process.env.AIRTABLE_TIMEOUT_MS || '8000', 10);
+const AT_RETRIES = parseInt(process.env.AIRTABLE_RETRIES || '3', 10);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function atRequestOnce(method, table, { recordId, query, body } = {}) {
   return new Promise((resolve, reject) => {
     let path = '/v0/' + encodeURIComponent(BASE_ID) + '/' + encodeURIComponent(table);
     if (recordId) path += '/' + recordId;
     if (query) path += '?' + query;
     const data = body ? JSON.stringify(body) : null;
     const req = https.request({
-      hostname: 'api.airtable.com', path, method,
+      hostname: 'api.airtable.com', path, method, timeout: AT_TIMEOUT_MS,
       headers: Object.assign({ Authorization: 'Bearer ' + API_KEY },
         data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
     }, (res) => {
@@ -47,14 +55,34 @@ function atRequest(method, table, { recordId, query, body } = {}) {
       res.on('end', () => {
         const text = Buffer.concat(chunks).toString('utf8');
         let json = {}; try { json = text ? JSON.parse(text) : {}; } catch (e) {}
-        if (res.statusCode >= 200 && res.statusCode < 300) resolve(json);
-        else reject(new Error('Airtable ' + res.statusCode + ': ' + text.slice(0, 300)));
+        if (res.statusCode >= 200 && res.statusCode < 300) return resolve(json);
+        const err = new Error('Airtable ' + res.statusCode + ': ' + text.slice(0, 300));
+        err.status = res.statusCode;
+        err.retryAfterMs = parseInt(res.headers['retry-after'] || '0', 10) * 1000;
+        reject(err);
       });
     });
-    req.on('error', reject);
+    req.on('timeout', () => { const e = new Error('Airtable timeout'); e.status = 0; req.destroy(e); });
+    req.on('error', (e) => { if (!e.status) e.status = 0; reject(e); });
     if (data) req.write(data);
     req.end();
   });
+}
+
+// 429 (rate limit), 5xx and network errors are transient — back off and retry.
+const isTransient = (e) => !e.status || e.status === 429 || e.status >= 500;
+
+async function atRequest(method, table, opts = {}) {
+  let last;
+  for (let attempt = 0; attempt <= AT_RETRIES; attempt++) {
+    try { return await atRequestOnce(method, table, opts); } catch (e) {
+      last = e;
+      if (attempt === AT_RETRIES || !isTransient(e)) break;
+      const base = e.retryAfterMs || Math.min(4000, 300 * Math.pow(2, attempt));
+      await sleep(base + Math.floor(Math.random() * 250)); // jitter avoids thundering herd
+    }
+  }
+  throw last;
 }
 
 const esc = (s) => String(s).replace(/'/g, "\\'");
@@ -93,13 +121,19 @@ function genCode(len = 6) {
   for (let i = 0; i < len; i++) s += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
   return s;
 }
+/* Codes are generated locally — no lookup — so a signup costs one less Airtable
+   request on the hot path. 9 chars over a 30-char alphabet is 2.19e13 codes: at
+   1M supporters the expected number of collisions is ~0.02. Set
+   REFERRAL_CODE_VERIFY=1 to re-enable the (rate-limit-costly) uniqueness probe. */
+const CODE_LEN = parseInt(process.env.REFERRAL_CODE_LEN || '9', 10);
 async function uniqueCode() {
+  if (process.env.REFERRAL_CODE_VERIFY !== '1') return genCode(CODE_LEN);
   for (let i = 0; i < 6; i++) {
-    const code = genCode(6);
+    const code = genCode(CODE_LEN);
     const hit = await findOne(T.contacts, `{referral_code} = '${esc(code)}'`);
     if (!hit) return code;
   }
-  return genCode(6) + genCode(1);
+  return genCode(CODE_LEN + 1);
 }
 
 /* ---------- identity ladder ---------- */
@@ -131,12 +165,14 @@ async function matchOrCreateContact(input, opts = {}) {
     const updated = await updateRecord(T.contacts, existing.id, patch);
     return { id: existing.id, fields: updated.fields, contact_id: f.contact_id, isNew: false };
   }
-  const contact_id = uuid();
+  // Callers may pre-generate identity (so a response is valid even if Airtable
+  // is throttled) and pass it in, keeping the two in sync.
+  const contact_id = opts.contact_id || uuid();
   const fields = {
     contact_id, first_name: input.first_name || '', last_name: input.last_name || '',
     email: e, mobile: m, postcode: input.postcode || '',
     fbclid: input.fbclid || '', fbp: input.fbp || '',
-    referral_code: await uniqueCode(),
+    referral_code: opts.referral_code || await uniqueCode(),
     first_source_channel: opts.first_source_channel || 'Direct',
     status: opts.status || 'Signatory Only',
     date_first_seen: nowISO(), last_updated: nowISO(),
@@ -216,7 +252,11 @@ async function logEvent({ event_type, contactId, payload, fbclid, referral_code_
   if (contactId) fields.contact = [contactId];
   const rec = await createRecord(T.events, fields);
   const fo = await projectFanout(rec, event_type, contactId, curated || { payload, timestamp: fields.timestamp });
-  try { await updateRecord(T.events, rec.id, { fanout_status: fo.fanout_status, fanout_error: fo.fanout_error || '' }); } catch (e) {}
+  // Only spend a request writing the status back when something actually went
+  // wrong — the happy path saves one Airtable call per event.
+  if (fo.fanout_status && fo.fanout_status !== 'Fanned Out') {
+    try { await updateRecord(T.events, rec.id, { fanout_status: fo.fanout_status, fanout_error: fo.fanout_error || '' }); } catch (e) {}
+  }
   return rec;
 }
 
@@ -240,16 +280,32 @@ function abVariant(seed) {
 }
 
 /* ---------- Site Stats + signature counter ---------- */
+// Warm-lambda cache of stat record ids, so setStat is one PATCH not a lookup+PATCH.
+const statIdCache = Object.create(null);
 async function getStat(key) {
   const r = await findOne(T.stats, `{key} = '${esc(key)}'`);
+  if (r) statIdCache[key] = r.id;
   return r ? { id: r.id, num: Number(r.fields.num_value) || 0 } : null;
 }
 async function setStat(key, num) {
+  const fields = { num_value: num, updated_at: nowISO() };
+  if (statIdCache[key]) {
+    try { return await updateRecord(T.stats, statIdCache[key], fields); } catch (e) { delete statIdCache[key]; }
+  }
   const r = await findOne(T.stats, `{key} = '${esc(key)}'`);
-  if (r) return updateRecord(T.stats, r.id, { num_value: num, updated_at: nowISO() });
-  return createRecord(T.stats, { key, num_value: num, updated_at: nowISO() });
+  if (r) { statIdCache[key] = r.id; return updateRecord(T.stats, r.id, fields); }
+  const created = await createRecord(T.stats, Object.assign({ key }, fields));
+  if (created) statIdCache[key] = created.id;
+  return created;
 }
+
+/* Per-signup estimate only. A read-modify-write counter loses updates when
+   signups land concurrently, so /api/cron/refresh-signature-count re-derives the
+   true number from Contacts on a schedule. Set SIGNATURE_COUNT_MODE=cron to skip
+   the per-signup bump entirely under heavy load and let the cron own the number
+   (saves 2-3 Airtable requests per signature). */
 async function bumpSignatureCount(by = 1) {
+  if (process.env.SIGNATURE_COUNT_MODE === 'cron') return null;
   const cur = await getStat('signature_count');
   const before = cur ? cur.num : 0;
   const after = before + by;
@@ -273,7 +329,7 @@ function publicSignatureCount(raw) {
 }
 
 module.exports = {
-  configured, uuid, nowISO, normEmail, normPhoneAU, esc,
+  configured, uuid, nowISO, normEmail, normPhoneAU, esc, genCode, uniqueCode,
   matchOrCreateContact, setReferralCodeIfMissing, resolveReferrerByCode, bumpStatus,
   findOne, createRecord, updateRecord, logEvent, logEventIdempotent, T,
   sha256hex, phoneHash, abVariant, getStat, setStat, bumpSignatureCount, publicSignatureCount,

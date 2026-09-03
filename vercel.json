@@ -14,6 +14,7 @@
   "crons": [
     { "path": "/api/cron/lapse-sweep", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/sms-inbound-poll", "schedule": "10 * * * *" },
+    { "path": "/api/cron/refresh-signature-count", "schedule": "*/15 * * * *" },
     { "path": "/api/cron/nightly-rollup", "schedule": "15 18 * * *" }
   ]
 }

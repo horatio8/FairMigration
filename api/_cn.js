@@ -60,6 +60,13 @@ const PETITION_RECEIVER_URL = process.env.CN_PETITION_RECEIVER_URL
 const CONTACT_RECEIVER_URL = process.env.CN_CONTACT_RECEIVER_URL
   || 'https://teller.campaignnucleus.com/forms/receiver/5b5610db-ad0c-4151-b03a-276df05d4b5b';
 
+/* The receiver is the capture of record for signups and partials, so a blip must
+   not lose a supporter: retry transient failures (429/5xx/network) with backoff
+   and jitter, under a hard per-attempt timeout. */
+const CN_TIMEOUT_MS = parseInt(process.env.CN_TIMEOUT_MS || '8000', 10);
+const CN_RETRIES = parseInt(process.env.CN_RETRIES || '3', 10);
+const napMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function postFormReceiver(url, { first_name, last_name, email, phone, message }) {
   if (!url) return { skipped: 'no_url' };
   if (!email && !phone) return { skipped: 'no_identity' };
@@ -69,19 +76,46 @@ async function postFormReceiver(url, { first_name, last_name, email, phone, mess
   if (email) params.set('email', email);
   if (phone) params.set('phone', phone);
   if (message) params.set('message', message);
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-    return { ok: res.ok, status: res.status };
-  } catch (e) { return { error: String(e.message || e) }; }
+  const payload = params.toString();
+
+  let last = null;
+  for (let attempt = 0; attempt <= CN_RETRIES; attempt++) {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), CN_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method: 'POST', signal: ac.signal,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload,
+      });
+      clearTimeout(timer);
+      if (res.ok) return { ok: true, status: res.status, attempts: attempt + 1 };
+      last = { ok: false, status: res.status };
+      if (res.status < 500 && res.status !== 429) return last; // genuine rejection
+    } catch (e) {
+      clearTimeout(timer);
+      last = { error: String(e.message || e) };
+    }
+    if (attempt < CN_RETRIES) await napMs(Math.min(4000, 300 * Math.pow(2, attempt)) + Math.floor(Math.random() * 250));
+  }
+  // Nothing else holds this person — make it recoverable from the logs.
+  console.error('[cn] receiver push FAILED after retries ' + JSON.stringify({ url, email, phone, first_name, last_name, last }));
+  return last || { error: 'cn_failed' };
 }
 
 // Petition signatures push here so CN owns the list + downstream automations.
 function pushPetitionReceiver(fields) { return postFormReceiver(PETITION_RECEIVER_URL, fields); }
+
+/* Partial (abandoned-form) capture. Uses its own receiver when configured,
+   otherwise the petition receiver with a clear marker so partials are never lost
+   and are still distinguishable from completed signatures. */
+const PARTIAL_RECEIVER_URL = process.env.CN_PARTIAL_RECEIVER_URL || PETITION_RECEIVER_URL;
+function pushPartialReceiver(fields) {
+  return postFormReceiver(PARTIAL_RECEIVER_URL, Object.assign({}, fields, {
+    message: fields.message || 'PARTIAL — started the petition but did not submit',
+  }));
+}
 // Contact-us enquiries push to their own receiver form.
 function pushContactReceiver(fields) { return postFormReceiver(CONTACT_RECEIVER_URL, fields); }
 
-module.exports = { configured, matchProfile, enrolAutomation, pushReceiver, receiverUrlFor, postFormReceiver, pushPetitionReceiver, pushContactReceiver };
+module.exports = { configured, matchProfile, enrolAutomation, pushReceiver, receiverUrlFor, postFormReceiver, pushPetitionReceiver, pushPartialReceiver, pushContactReceiver };

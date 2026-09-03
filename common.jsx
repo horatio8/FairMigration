@@ -169,14 +169,22 @@
   }
 
   // fire an abandoned-form partial once per identity per page
+  /* Abandoned-form capture. Fires once when they've typed enough to identify
+     them, again on page-hide (true abandonment), and once more as `completed`
+     when they actually submit so they aren't chased. keepalive lets the request
+     survive the page being closed. */
   let _partialFired = false;
-  function firePartial(form, data) {
-    if (_partialFired) return; _partialFired = true;
+  function firePartial(form, data, opts) {
+    const o = opts || {};
+    if (_partialFired && !o.force) return;
+    if (!o.completed) _partialFired = true;
+    if (!(data && (data.email || data.mobile))) return;
     try {
       fetch(API + '/api/partial', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({ form }, data)), keepalive: true });
+        body: JSON.stringify(Object.assign({ form }, data, o.completed ? { completed: true } : {})), keepalive: true });
     } catch (e) {}
   }
+  const firePartialCompleted = (form, data) => firePartial(form, data, { completed: true, force: true });
 
   function Eyebrow({ children, variant }) {
     return <div className={'eyebrow' + (variant ? ' eyebrow--' + variant : '')}>{children}</div>;
@@ -374,6 +382,26 @@
       }).catch(() => {});
       return () => { live = false; };
     }, []);
+
+    // Abandoned-form capture: hold a live snapshot and flush it if they leave
+    // without submitting (tab hidden / page closed), not just on email blur.
+    const snap = useRef(d); snap.current = d;
+    const submitted = useRef(false);
+    useEffect(() => {
+      const flush = () => {
+        if (submitted.current) return;
+        const v = snap.current || {};
+        firePartial('petition', {
+          email: (v.email || '').trim(), mobile: (v.mobile || '').trim(),
+          first_name: (v.firstName || '').trim(), last_name: (v.lastName || '').trim(),
+          postcode: (v.postcode || '').trim(),
+        });
+      };
+      const onVis = () => { if (document.visibilityState === 'hidden') flush(); };
+      window.addEventListener('pagehide', flush);
+      document.addEventListener('visibilitychange', onVis);
+      return () => { window.removeEventListener('pagehide', flush); document.removeEventListener('visibilitychange', onVis); };
+    }, []);
     const set = (k) => (e) => {
       const v = e.target.value;
       setD((s) => ({ ...s, [k]: v }));
@@ -389,12 +417,15 @@
       setErr(n);
       if (Object.keys(n).length) return;
       // POST to the first-party API (mapped to API field names); UI proceeds even if it fails.
+      submitted.current = true; // stop the abandonment flush from firing
       setBusy(true);
       let result = null;
       try {
         result = await signPetition({ first_name: d.firstName.trim(), last_name: d.lastName.trim(),
           email: d.email.trim(), mobile: d.mobile.trim(), postcode: d.postcode.trim(), firstName: d.firstName.trim() });
       } catch (e2) {}
+      // close any partial we captured for this person so they aren't chased
+      try { firePartialCompleted('petition', { email: d.email.trim(), mobile: d.mobile.trim(), first_name: d.firstName.trim(), last_name: d.lastName.trim(), postcode: d.postcode.trim() }); } catch (e2) {}
       try { markSigned(d); } catch (e2) {}
       try { window.dispatchEvent(new CustomEvent('petition-signed', { detail: { first: d.firstName.trim() } })); } catch (e2) {}
       if (onSign) onSign(d, result);
