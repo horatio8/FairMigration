@@ -145,15 +145,16 @@
     }, "✓"))));
   }
   function AskIdentity({
-    onReady
+    onReady,
+    initial
   }) {
-    const [d, setD] = useState({
+    const [d, setD] = useState(Object.assign({
       firstName: '',
       lastName: '',
       email: '',
       mobile: '',
       postcode: ''
-    });
+    }, initial || {}));
     const [err, setErr] = useState({});
     const [busy, setBusy] = useState(false);
     const set = k => e => {
@@ -195,6 +196,7 @@
           try {
             localStorage.setItem('ff_referral_code', j.referral_code);
             localStorage.setItem('ff_first_name', j.first_name || d.firstName);
+            localStorage.removeItem('ff_pending_signup');
           } catch (e2) {}
           onReady({
             referral_code: j.referral_code,
@@ -269,16 +271,70 @@
     const [count] = useLiveCount();
     const [state, setState] = useState('loading');
     const [ctx, setCtx] = useState(null); // { referral_code, first_name }
+    const [prefill, setPrefill] = useState(null);
     const pollRef = useRef(0);
     function ready(c) {
       setCtx(c);
       setState('ready');
+      // Persist so a refresh or a later visit still knows them.
+      try {
+        if (c && c.referral_code) localStorage.setItem('ff_referral_code', c.referral_code);
+        if (c && c.first_name) localStorage.setItem('ff_first_name', c.first_name);
+        localStorage.removeItem('ff_pending_signup');
+      } catch (e) {}
+    }
+
+    /* Someone who just signed but whose sign-up call failed (offline blip, CORS,
+       a throttled backend) arrives here with their details stashed rather than a
+       code. Mint the code for them instead of making them fill in a form again. */
+    function recoverPending(pending) {
+      setState('polling');
+      fetch(API + '/api/share-signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          first_name: pending.first_name,
+          last_name: pending.last_name,
+          email: pending.email,
+          mobile: pending.mobile,
+          postcode: pending.postcode
+        })
+      }).then(r => r.ok ? r.json() : Promise.reject()).then(j => {
+        if (j && j.success && j.referral_code) ready({
+          referral_code: j.referral_code,
+          first_name: j.first_name || pending.first_name
+        });else return Promise.reject();
+      }).catch(() => {
+        // Last resort: show the form already filled in, so it is one click.
+        setPrefill({
+          firstName: pending.first_name || '',
+          lastName: pending.last_name || '',
+          email: pending.email || '',
+          mobile: pending.mobile || '',
+          postcode: pending.postcode || ''
+        });
+        setState('ask');
+      });
     }
     useEffect(() => {
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get('session_id');
       const emailParam = params.get('email');
+      // ?c= is the code the sign form just handed us — trusted ahead of storage,
+      // which can be empty on a cross-origin microsite or in private browsing.
+      const urlCode = params.get('c');
       const localCode = safeGet('ff_referral_code');
+      let pending = null;
+      try {
+        pending = JSON.parse(safeGet('ff_pending_signup') || 'null');
+        // A day-old record is not this visitor — don't hand them someone else's link.
+        if (pending && (!pending.at || Date.now() - pending.at > 24 * 60 * 60 * 1000)) {
+          pending = null;
+          localStorage.removeItem('ff_pending_signup');
+        }
+      } catch (e) {}
       if (sessionId) {
         firePixelPurchase(sessionId);
         setState('polling');
@@ -294,11 +350,22 @@
         tick();
         return;
       }
+      if (urlCode) {
+        ready({
+          referral_code: urlCode,
+          first_name: safeGet('ff_first_name') || ''
+        });
+        return;
+      }
       if (localCode) {
         ready({
           referral_code: localCode,
           first_name: safeGet('ff_first_name') || ''
         });
+        return;
+      }
+      if (pending && pending.email && pending.first_name && pending.last_name) {
+        recoverPending(pending);
         return;
       }
       if (emailParam) {
@@ -333,17 +400,18 @@
       style: {
         marginTop: 0
       }
-    }, "Confirming your donation…"), /*#__PURE__*/React.createElement("p", {
+    }, "Setting up your share link…"), /*#__PURE__*/React.createElement("p", {
       className: "body-p"
-    }, "This takes a few seconds while we finalise your receipt. Your share link will appear automatically."), /*#__PURE__*/React.createElement("div", {
+    }, "This takes a few seconds. Your link will appear automatically — no need to do anything."), /*#__PURE__*/React.createElement("div", {
       className: "share-spinner"
     })), state === 'ask' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "body-p",
       style: {
         marginTop: 0
       }
-    }, "Pop your details in and we'll generate your personal share link — every person who signs through it is credited to you."), /*#__PURE__*/React.createElement(AskIdentity, {
-      onReady: ready
+    }, prefill ? "We couldn't reach the server just now. Check your details and hit the button — your signature is safe, this only generates your share link." : "Pop your details in and we'll generate your personal share link — every person who signs through it is credited to you."), /*#__PURE__*/React.createElement(AskIdentity, {
+      onReady: ready,
+      initial: prefill
     })), state === 'ready' && ctx && ctx.referral_code && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
       className: "body-p",
       style: {

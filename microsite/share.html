@@ -26,7 +26,9 @@
     apiBase: 'https://www.fairmigration.vote',
     assetBase: 'https://www.fairmigration.vote/assets/',
     origin: window.location.origin,
-    sharePath: '/',
+    // Referral links must come back to THIS microsite, whether it is served at
+    // the root of its own domain or under a subpath like /microsite/.
+    sharePath: window.location.pathname.replace(/[^/]*$/, ''),
     afterSignUrl: 'share.html',
     signHref: '#sign',
     minimalChrome: true

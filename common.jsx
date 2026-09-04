@@ -112,6 +112,23 @@
     return result;
   }
 
+  /* Where the sign form sends people next, with their own referral code attached
+     as ?c= so the share page can greet them and show their link straight away
+     even if localStorage is unavailable or the pages sit on different origins.
+     `c` deliberately differs from `ref` so it is never read as attribution. */
+  function afterSignUrl(result) {
+    const base = CFG.afterSignUrl || 'donate.html#give';
+    const code = result && result.referral_code;
+    if (!code) return base;
+    try {
+      const u = new URL(base, window.location.href);
+      // Only the share page reads it; keep it off the donate URL.
+      if (!/share/i.test(u.pathname)) return base;
+      u.searchParams.set('c', code);
+      return u.toString();
+    } catch (e) { return base; }
+  }
+
   /* ---------- Stripe: tag a donate URL with the petition slug at click time ---------- */
   function appendClientRef(url, slug) {
     if (!url || !slug) return url;
@@ -431,8 +448,19 @@
       try { markSigned(d); } catch (e2) {}
       try { window.dispatchEvent(new CustomEvent('petition-signed', { detail: { first: d.firstName.trim() } })); } catch (e2) {}
       if (onSign) onSign(d, result);
-      // Straight to the ask (donate matrix on the main site, or the share page on the microsite).
-      try { window.location.assign(CFG.afterSignUrl || 'donate.html#give'); return; } catch (e2) {}
+      // Someone who has just signed must never be asked to type their details
+      // again. Carry the referral code in the URL as well as localStorage (the
+      // URL survives blocked/partitioned storage and a cross-origin microsite),
+      // and if the API call failed, hand the next page enough to mint a code
+      // on their behalf instead of showing them a form.
+      try {
+        if (result && result.referral_code) localStorage.removeItem('ff_pending_signup');
+        else safeSet('ff_pending_signup', JSON.stringify({
+          first_name: d.firstName.trim(), last_name: d.lastName.trim(), email: d.email.trim(),
+          mobile: d.mobile.trim(), postcode: d.postcode.trim(), at: Date.now(),
+        }));
+      } catch (e2) {}
+      try { window.location.assign(afterSignUrl(result)); return; } catch (e2) {}
       setBusy(false);
     };
     return (
@@ -841,7 +869,7 @@
 
   window.FM = {
     A, GOAL, CFG, fmt, pct, clean4, safeGet, safeSet, markSigned, isSigned, useLiveCount,
-    getAttr, captureAttribution, signPetition, appendClientRef,
+    getAttr, captureAttribution, signPetition, appendClientRef, afterSignUrl,
     Eyebrow, Star, SiteNav, Hero, SignatureBar, Problem, PetitionForm, PetitionSection,
     MapStage, Demand, DonateBlock, PageHead, Footer,
   };
