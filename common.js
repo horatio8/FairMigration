@@ -307,17 +307,24 @@
     }
   }
 
-  // fire an abandoned-form partial once per identity per page
-  /* Abandoned-form capture. Fires once when they've typed enough to identify
-     them, again on page-hide (true abandonment), and once more as `completed`
-     when they actually submit so they aren't chased. keepalive lets the request
-     survive the page being closed. */
-  let _partialFired = false;
+  /* Abandoned-form capture, in two stages.
+      `capture` fires as soon as someone has typed enough to identify them and is
+     recorded in Airtable's Lapse Queue only. `exit` fires when they actually
+     leave without submitting, and is the only stage pushed to Campaign Nucleus.
+      The split is not cosmetic. The CN petition form treats email as unique and
+     keeps the FIRST entry per address, so a partial sent while someone is still
+     filling in the form takes the slot and silently swallows the real signature
+     that follows — every signer would be filed as an abandoner. Holding the CN
+     push back until they genuinely leave means the two can never collide.
+      keepalive lets the exit request survive the page being closed. */
+  const _partialStages = {};
   function firePartial(form, data, opts) {
     const o = opts || {};
-    if (_partialFired && !o.force) return;
-    if (!o.completed) _partialFired = true;
+    const stage = o.completed ? 'completed' : o.stage || 'capture';
     if (!(data && (data.email || data.mobile))) return;
+    const key = form + ':' + stage;
+    if (_partialStages[key] && !o.force) return;
+    _partialStages[key] = true;
     try {
       fetch(API + '/api/partial', {
         method: 'POST',
@@ -325,7 +332,8 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(Object.assign({
-          form
+          form,
+          stage
         }, data, o.completed ? {
           completed: true
         } : {})),
@@ -745,6 +753,8 @@
           first_name: (v.firstName || '').trim(),
           last_name: (v.lastName || '').trim(),
           postcode: (v.postcode || '').trim()
+        }, {
+          stage: 'exit'
         });
       };
       const onVis = () => {
