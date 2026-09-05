@@ -27,6 +27,8 @@
       e.preventDefault();
       const n = {};
       if (!d.firstName.trim()) n.firstName = 'Required';
+      // CN drops entries with no surname, so this cannot be optional.
+      if (!d.lastName.trim()) n.lastName = 'Required';
       if (!d.email.trim()) n.email = 'Required';
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) n.email = 'Enter a valid email address';
       setErr(n); if (Object.keys(n).length) return;
@@ -57,7 +59,7 @@
       <form className="pform" onSubmit={submit} noValidate style={{ maxWidth: '520px' }}>
         <div className="pform-grid2">
           <Input label="First name *" name="firstName" placeholder="Jane" value={d.firstName} onChange={set('firstName')} invalid={!!err.firstName} hint={err.firstName} />
-          <Input label="Last name" name="lastName" placeholder="Citizen" value={d.lastName} onChange={set('lastName')} />
+          <Input label="Last name *" name="lastName" placeholder="Citizen" value={d.lastName} onChange={set('lastName')} invalid={!!err.lastName} hint={err.lastName} />
         </div>
         <Input label="Email *" type="email" name="email" placeholder="jane@example.com" value={d.email} onChange={set('email')} invalid={!!err.email} hint={err.email} />
         <Input label="Mobile phone" type="tel" name="mobile" placeholder="0400 000 000" value={d.mobile} onChange={set('mobile')} />

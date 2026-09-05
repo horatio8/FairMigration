@@ -39,15 +39,19 @@
   function Newsletter() {
     const [email, setEmail] = useState('');
     const [first, setFirst] = useState('');
+    const [last, setLast] = useState('');
     const [state, setState] = useState('idle');
     const submit = async (e) => {
       e.preventDefault();
+      // First and last name are not optional politeness: Campaign Nucleus drops
+      // any entry missing them, so an incomplete sign-up would vanish silently.
+      if (!first.trim() || !last.trim()) { setState('bad'); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setState('bad'); return; }
       setState('busy');
       try {
         const r = await fetch(API + '/api/join', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: 'newsletter', first_name: first.trim(), email: email.trim() }),
+          body: JSON.stringify({ kind: 'newsletter', first_name: first.trim(), last_name: last.trim(), email: email.trim() }),
         });
         setState(r.ok ? 'done' : 'bad');
       } catch (e2) { setState('bad'); }
@@ -57,10 +61,16 @@
     }
     return (
       <form className="news-signup" onSubmit={submit} noValidate>
-        <Input label="First name" name="nlFirst" placeholder="Jane" value={first} onChange={(e) => setFirst(e.target.value)} />
+        <div className="pform-grid2">
+          <Input label="First name *" name="nlFirst" placeholder="Jane" value={first}
+            onChange={(e) => { setFirst(e.target.value); if (state === 'bad') setState('idle'); }} invalid={state === 'bad' && !first.trim()} />
+          <Input label="Last name *" name="nlLast" placeholder="Citizen" value={last}
+            onChange={(e) => { setLast(e.target.value); if (state === 'bad') setState('idle'); }} invalid={state === 'bad' && !last.trim()} />
+        </div>
         <Input label="Email *" type="email" name="nlEmail" placeholder="jane@example.com" value={email}
           onChange={(e) => { setEmail(e.target.value); if (state === 'bad') setState('idle'); }}
-          invalid={state === 'bad'} hint={state === 'bad' ? 'Enter a valid email address' : undefined} />
+          invalid={state === 'bad' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())}
+          hint={state === 'bad' ? 'Please give your name and a valid email address' : undefined} />
         <Button type="submit" variant="primary" size="lg" fullWidth disabled={state === 'busy'}>
           {state === 'busy' ? 'One moment…' : 'Keep me updated'}
         </Button>

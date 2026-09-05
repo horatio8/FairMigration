@@ -71,9 +71,16 @@
   function Newsletter() {
     const [email, setEmail] = useState('');
     const [first, setFirst] = useState('');
+    const [last, setLast] = useState('');
     const [state, setState] = useState('idle');
     const submit = async e => {
       e.preventDefault();
+      // First and last name are not optional politeness: Campaign Nucleus drops
+      // any entry missing them, so an incomplete sign-up would vanish silently.
+      if (!first.trim() || !last.trim()) {
+        setState('bad');
+        return;
+      }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
         setState('bad');
         return;
@@ -88,6 +95,7 @@
           body: JSON.stringify({
             kind: 'newsletter',
             first_name: first.trim(),
+            last_name: last.trim(),
             email: email.trim()
           })
         });
@@ -105,13 +113,29 @@
       className: "news-signup",
       onSubmit: submit,
       noValidate: true
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "pform-grid2"
     }, /*#__PURE__*/React.createElement(Input, {
-      label: "First name",
+      label: "First name *",
       name: "nlFirst",
       placeholder: "Jane",
       value: first,
-      onChange: e => setFirst(e.target.value)
+      onChange: e => {
+        setFirst(e.target.value);
+        if (state === 'bad') setState('idle');
+      },
+      invalid: state === 'bad' && !first.trim()
     }), /*#__PURE__*/React.createElement(Input, {
+      label: "Last name *",
+      name: "nlLast",
+      placeholder: "Citizen",
+      value: last,
+      onChange: e => {
+        setLast(e.target.value);
+        if (state === 'bad') setState('idle');
+      },
+      invalid: state === 'bad' && !last.trim()
+    })), /*#__PURE__*/React.createElement(Input, {
       label: "Email *",
       type: "email",
       name: "nlEmail",
@@ -121,8 +145,8 @@
         setEmail(e.target.value);
         if (state === 'bad') setState('idle');
       },
-      invalid: state === 'bad',
-      hint: state === 'bad' ? 'Enter a valid email address' : undefined
+      invalid: state === 'bad' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
+      hint: state === 'bad' ? 'Please give your name and a valid email address' : undefined
     }), /*#__PURE__*/React.createElement(Button, {
       type: "submit",
       variant: "primary",

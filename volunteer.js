@@ -46,6 +46,8 @@
       e.preventDefault();
       const n = {};
       if (!d.firstName.trim()) n.firstName = 'Required';
+      // CN drops entries with no surname, so this cannot be optional.
+      if (!d.lastName.trim()) n.lastName = 'Required';
       if (!d.email.trim()) n.email = 'Required';else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) n.email = 'Enter a valid email address';
       setErr(n);
       if (Object.keys(n).length) return;
@@ -105,11 +107,13 @@
       invalid: !!err.firstName,
       hint: err.firstName
     }), /*#__PURE__*/React.createElement(Input, {
-      label: "Last name",
+      label: "Last name *",
       name: "lastName",
       placeholder: "Citizen",
       value: d.lastName,
-      onChange: set('lastName')
+      onChange: set('lastName'),
+      invalid: !!err.lastName,
+      hint: err.lastName
     })), /*#__PURE__*/React.createElement(Input, {
       label: "Email *",
       type: "email",

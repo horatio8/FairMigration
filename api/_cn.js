@@ -67,9 +67,20 @@ const CN_TIMEOUT_MS = parseInt(process.env.CN_TIMEOUT_MS || '8000', 10);
 const CN_RETRIES = parseInt(process.env.CN_RETRIES || '3', 10);
 const napMs = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* The receiver forms mark first_name, last_name, email and message required, and
+   a POST missing one is answered 200 and then silently discarded — so a caller
+   would record a success for a supporter CN never stored. Refuse up front and
+   say so, rather than reporting a push that did not happen. */
 async function postFormReceiver(url, { first_name, last_name, email, phone, message }) {
   if (!url) return { skipped: 'no_url' };
   if (!email && !phone) return { skipped: 'no_identity' };
+  const missing = ['first_name', 'last_name', 'email', 'message']
+    .filter((k) => !String({ first_name, last_name, email, message }[k] || '').trim());
+  if (missing.length) {
+    console.error('[cn] receiver push SKIPPED — CN requires ' + missing.join(', ') + ' and drops the entry without them ' +
+      JSON.stringify({ url, email, phone, first_name, last_name }));
+    return { skipped: 'missing_required', missing };
+  }
   const params = new URLSearchParams();
   if (first_name) params.set('first_name', first_name);
   if (last_name) params.set('last_name', last_name);
